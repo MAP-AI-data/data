@@ -2,7 +2,7 @@
 
 Industry-level AI adoption shares derived from the **MAP-AI** (Mapping Artificial Intelligence in Firms) dataset, as described in:
 
-> Garbers, Julio and Terry Gregory. "Mapping Artificial Intelligence: Evidence from Firm-Level Web Data in Europe."
+> Garbers, Julio and Terry Gregory. "The Diffusion of Artificial Intelligence Across Firms: Evidence from Europe."
 
 The MAP-AI data underlying this study -- including firm-level indicators of AI adoption, AI ecosystem roles, and AI technology types for European firms between 2016 and 2024 -- are publicly available via GitHub: <https://github.com/MAP-AI-data/data>.
 
@@ -62,8 +62,8 @@ Industry codes are validated against official classification files (Eurostat NAC
 If you use this data, please cite:
 
 ```bibtex
-@article{garbers_mapping_ai,
-  title   = {Mapping Artificial Intelligence: Evidence from Firm-Level Web Data in Europe},
+@article{garbers_diffusion_ai,
+  title   = {The Diffusion of Artificial Intelligence Across Firms: Evidence from Europe},
   author  = {Garbers, Julio and Gregory, Terry},
   year    = {2025}
 }
@@ -72,3 +72,4 @@ If you use this data, please cite:
 ## License
 
 This dataset is licensed under the [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) license. You are free to share and adapt this data for any purpose, provided you give appropriate credit by citing the paper above.
+
