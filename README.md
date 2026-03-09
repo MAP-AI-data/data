@@ -60,7 +60,7 @@ Industry codes are validated against official classification files (Eurostat NAC
 If you use this data, please cite:
 
 ```bibtex
-@techreport{garbers_diffusion_ai,
+@techreport{garbers_and_gregory_diffusion_ai,
   title       = {The Diffusion of Artificial Intelligence Across Firms: Evidence from Europe},
   author      = {Garbers, Julio and Gregory, Terry},
   year        = {2026},
@@ -74,6 +74,7 @@ If you use this data, please cite:
 ## License
 
 This dataset is licensed under the [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) license. You are free to share and adapt this data for any purpose, provided you give appropriate credit by citing the paper above.
+
 
 
 
