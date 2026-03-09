@@ -35,13 +35,13 @@ A single long-format table with **60,584 rows**, covering two industry classific
 | NACE Rev. 2 | 21 sections (A-U) | 88 divisions | 272 groups | 615 classes |
 | NAICS 2022 | 9 sectors | 24 subsectors | 96 industry groups | 304 industries |
 
-NACE codes follow the Eurostat NACE Rev. 2 classification. NAICS codes follow the 2022 NAICS structure published by the U.S. Census Bureau. NACE 1-digit codes correspond to section letters (A--U); higher levels are numeric. NAICS codes are numeric at all levels.
+NACE codes follow the Eurostat NACE Rev. 2 classification. NAICS codes follow the 2022 NAICS structure published by the U.S. Census Bureau. NACE 1-digit codes correspond to section letters (A-U); higher levels are numeric. NAICS codes are numeric at all levels.
 
 ## Methodology
 
 ### AI adoption measure
 
-The `ai_adoption_share` column reports the share of firms in a given industry-country-year cell whose websites indicate AI usage, as identified by the MAP-AI indicator. MAP-AI uses a Large Language Model (LLM) to classify firm website content and determine whether a firm adopts AI. The indicator captures *realized* AI adoption -- firms that actively use, develop, or deploy AI technologies -- rather than potential AI exposure. See the paper for full details on the classification methodology and validation.
+The `ai_adoption_share` column reports the share of firms in a given industry-country-year cell whose websites indicate AI usage, as identified by the MAP-AI indicator. MAP-AI uses a Large Language Model (LLM) to classify firm website content and determine whether a firm adopts AI. The indicator captures *realized* AI adoption — firms that actively use, develop, or deploy AI technologies — rather than potential AI exposure. See the paper for full details on the classification methodology and validation.
 
 ### Construction of this dataset
 
@@ -60,16 +60,21 @@ Industry codes are validated against official classification files (Eurostat NAC
 If you use this data, please cite:
 
 ```bibtex
-@article{garbers_diffusion_ai,
-  title   = {The Diffusion of Artificial Intelligence Across Firms: Evidence from Europe},
-  author  = {Garbers, Julio and Gregory, Terry},
-  year    = {2025}
+@techreport{garbers_diffusion_ai,
+  title       = {The Diffusion of Artificial Intelligence Across Firms: Evidence from Europe},
+  author      = {Garbers, Julio and Gregory, Terry},
+  year        = {2026},
+  institution = {Institute of Labor Economics (IZA)},
+  type        = {IZA Discussion Paper},
+  number      = {18434},
+  url         = {https://docs.iza.org/dp18434.pdf}
 }
 ```
 
 ## License
 
 This dataset is licensed under the [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) license. You are free to share and adapt this data for any purpose, provided you give appropriate credit by citing the paper above.
+
 
 
 
