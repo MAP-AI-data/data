@@ -2,7 +2,7 @@
 
 Industry-level AI adoption shares derived from the **MAP-AI** (Mapping Artificial Intelligence in Firms) dataset, as described in:
 
-> Garbers, Julio and Terry Gregory. "The Diffusion of Artificial Intelligence Across Firms: Evidence from Europe."
+[Garbers, Julio and Terry Gregory. "The Diffusion of Artificial Intelligence Across Firms: Evidence from Europe." IZA Discussion Paper, No. 18434 (2026).](https://docs.iza.org/dp18434.pdf)
 
 ## File
 
@@ -70,6 +70,7 @@ If you use this data, please cite:
 ## License
 
 This dataset is licensed under the [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) license. You are free to share and adapt this data for any purpose, provided you give appropriate credit by citing the paper above.
+
 
 
 
