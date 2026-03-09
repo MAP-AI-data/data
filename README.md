@@ -26,7 +26,7 @@ A single long-format table with **60,584 rows**, covering two industry classific
 
 **Countries:** Belgium, France, Germany, Luxembourg, and a pooled aggregate combining all four.
 
-**Years:** 2016--2024 (9 years).
+**Years:** 2016-2024 (9 years).
 
 **Industry codes:**
 
@@ -70,6 +70,7 @@ If you use this data, please cite:
 ## License
 
 This dataset is licensed under the [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) license. You are free to share and adapt this data for any purpose, provided you give appropriate credit by citing the paper above.
+
 
 
 
