@@ -32,7 +32,7 @@ A single long-format table with **60,584 rows**, covering two industry classific
 
 | Classification | 1-digit | 2-digit | 3-digit | 4-digit |
 |---|---|---|---|---|
-| NACE Rev. 2 | 21 sections (A--U) | 88 divisions | 272 groups | 615 classes |
+| NACE Rev. 2 | 21 sections (A-U) | 88 divisions | 272 groups | 615 classes |
 | NAICS 2022 | 9 sectors | 24 subsectors | 96 industry groups | 304 industries |
 
 NACE codes follow the Eurostat NACE Rev. 2 classification. NAICS codes follow the 2022 NAICS structure published by the U.S. Census Bureau. NACE 1-digit codes correspond to section letters (A--U); higher levels are numeric. NAICS codes are numeric at all levels.
@@ -70,6 +70,7 @@ If you use this data, please cite:
 ## License
 
 This dataset is licensed under the [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) license. You are free to share and adapt this data for any purpose, provided you give appropriate credit by citing the paper above.
+
 
 
 
