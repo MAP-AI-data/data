@@ -18,7 +18,7 @@ A single long-format table with **60,584 rows**, covering two industry classific
 | `code` | string | Industry code (e.g., `"C"`, `"62"`, `"620"`, `"6201"`) |
 | `digit_level` | int | Aggregation level: 1, 2, 3, or 4 |
 | `country` | string | `"Germany"`, `"France"`, `"Luxembourg"`, `"Belgium"`, or `"Pooled"` |
-| `year` | int | Year of observation (2016--2024) |
+| `year` | int | Year of observation (2016-2024) |
 | `ai_adoption_share` | float | Share of firms classified as using AI (null if `n_firms` < 30) |
 | `n_firms` | int | Number of unique firms in the industry-country-year cell |
 
@@ -70,6 +70,7 @@ If you use this data, please cite:
 ## License
 
 This dataset is licensed under the [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) license. You are free to share and adapt this data for any purpose, provided you give appropriate credit by citing the paper above.
+
 
 
 
