@@ -55,6 +55,10 @@ Cells with fewer than 30 firms have `ai_adoption_share` set to null to avoid rep
 
 Industry codes are validated against official classification files (Eurostat NACE Rev. 2 RDF and 2022 NAICS Structure) before aggregation. Higher-level codes (1-digit through 3-digit) are derived from valid 4-digit codes.
 
+## Main data source
+
+[Common Crawl]([url](https://commoncrawl.org/))
+
 ## Citation
 
 If you use this data, please cite:
