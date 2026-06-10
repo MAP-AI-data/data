@@ -57,7 +57,7 @@ Industry codes are validated against official classification files (Eurostat NAC
 
 ## Main data source
 
-[Common Crawl]([url](https://commoncrawl.org/))
+[Common Crawl](https://commoncrawl.org/)
 
 ## Citation
 
