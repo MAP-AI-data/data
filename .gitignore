@@ -1,0 +1,9 @@
+# Build tooling lives in the repo but is not published: it depends on internal
+# project paths on the MeluXina cluster and is not runnable outside it. The
+# generated data files (*.parquet, *.csv) are committed and must stay tracked.
+build_public_data.py
+build_public_data.sh
+
+# SLURM job logs
+slurm/
+*.out
