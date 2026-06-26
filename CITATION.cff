@@ -1,21 +1,26 @@
 cff-version: 1.2.0
 title: "MAP-AI: Mapping Artificial Intelligence in Firms"
-message: "If you use this dataset, please cite it using the metadata from this file."
+message: "If you use this dataset, please cite the accompanying paper (see preferred-citation)."
 type: dataset
 authors:
   - family-names: Garbers
     given-names: Julio
   - family-names: Gregory
     given-names: Terry
-date-released: "2025-01-01"
+version: "1.1.0"
+date-released: "2026-06-26"
 license: CC-BY-4.0
 url: "https://github.com/MAP-AI-data/data"
 preferred-citation:
-  type: article
-  title: "Mapping Artificial Intelligence: Evidence from Firm-Level Web Data in Europe"
+  type: report
+  title: "The Diffusion of Artificial Intelligence Across Firms: Evidence from Europe"
   authors:
     - family-names: Garbers
       given-names: Julio
     - family-names: Gregory
       given-names: Terry
-  year: 2025
+  institution:
+    name: "Institute of Labor Economics (IZA)"
+  number: "18434"
+  year: 2026
+  url: "https://docs.iza.org/dp18434.pdf"

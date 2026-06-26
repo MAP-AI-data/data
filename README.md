@@ -39,7 +39,9 @@ format and share the same firm population and denominators (see *Methodology*).
 ## Coverage
 
 **Countries:** Belgium, France, Germany, Luxembourg (plus a `Pooled` aggregate
-that combines all four, in the *industry × country* tables only).
+that combines all four, in the *industry × country* tables only). The region
+tables need no pooled aggregate: NUTS regions are nested within a single country,
+so NUTS level 0 already provides the per-country totals.
 
 **Years:** 2016–2024 (9 years).
 
@@ -48,13 +50,20 @@ that combines all four, in the *industry × country* tables only).
 | Classification | 1-digit | 2-digit | 3-digit | 4-digit |
 |---|---|---|---|---|
 | NACE Rev. 2 | 21 sections (A–U) | 88 divisions | 272 groups | 615 classes |
-| NAICS 2022 | 9 sectors | 24 subsectors | 96 industry groups | 304 industries |
+| NAICS 2022 | 9 first-digit groups | 24 subsectors | 96 industry groups | 304 industries |
 
-NACE 1-digit codes are the section letters (A–U); all higher NACE levels and all
-NAICS levels are numeric.
+NACE 1-digit codes are the official section letters (A–U); all higher NACE levels
+and all NAICS levels are numeric. **Note:** NAICS has no official 1-digit level
+(its sectors are 2-digit, some spanning ranges such as 31–33). The NAICS
+`digit_level = 1` rows are a non-standard grouping by the first digit of the
+4-digit code, retained for backward compatibility; use the 2-digit level for
+sector-level analysis.
 
-**NUTS regions** (Eurostat NUTS 2024 classification), regions that contain at
-least one firm:
+**NUTS regions** (Eurostat NUTS 2024 classification). A region appears as a row
+once at least one firm is located in it; exactly as for industries, its shares
+are reported only when the relevant denominator reaches 30 (`n_firms` ≥ 30 for
+`ai_adoption_share`). In practice every region present clears the 30-firm
+threshold, so no regional adoption share is suppressed.
 
 | NUTS level | Meaning | Code length | Regions present |
 |---|---|---|---|
@@ -116,9 +125,17 @@ headline diffusion series.
 
 ### `ai_adoption_share`
 
-The share of classified firms in the cell that are AI-active (the mean of the
-binary cumulative AI-adoption indicator). The two industry/region adoption
-tables together reproduce the previously published industry-country table exactly.
+The share of classified firms in the cell that are AI-active — the mean of the
+binary cumulative AI-adoption indicator over the firm-years for which it is
+defined. The industry-country adoption table reproduces the previously published
+table exactly.
+
+A small number of classified firm-years have an *undetermined* adoption
+indicator. The mean drops them from its denominator, whereas `n_firms` still
+counts them, so `ai_adoption_share` can differ from `n_ai_firms / n_firms` (the
+role/type tables' all-firm denominator) by at most about 0.003, in a minority of
+cells. Treat `ai_adoption_share` as the authoritative adoption measure (it is the
+one used in the paper).
 
 ### Roles and technology types: two denominators
 
@@ -129,12 +146,14 @@ available, each category row reports two shares:
 
 - `*_share_among_ai_firms` = firms in the category ÷ `n_ai_firms` — the
   composition of the local AI ecosystem (the framing used in the paper).
-- `*_share_among_all_firms` = firms in the category ÷ `n_firms` — directly
-  comparable to `ai_adoption_share`.
+- `*_share_among_all_firms` = firms in the category ÷ `n_firms` — the share of
+  the whole local firm population, on the same `n_firms` denominator that is
+  reported alongside it.
 
-`n_ai_firms` and `n_firms` are both included so any underlying count can be
-recovered (e.g. `round(share × denominator)`) for cells above the suppression
-threshold.
+Both denominators (`n_ai_firms` and `n_firms`) are reported, so for any cell
+above its suppression threshold the underlying category firm count is recoverable
+as `round(share_among_all_firms × n_firms)` or, equivalently,
+`round(share_among_ai_firms × n_ai_firms)`.
 
 ### Category structure
 
