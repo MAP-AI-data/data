@@ -103,7 +103,7 @@ dash.calc('mix_by_country', {
 dash.calc('region_rows', {
   title: 'Regions with names',
   description:
-    'NUTS 1–3 regions with their names (a NUTS 3 region is named after its NUTS 2 region) and the change in AI-active share since the first year, in percentage points.',
+    'NUTS 1–3 regions with their names (a region without a name of its own, such as a French outermost region at NUTS 3, takes its NUTS 2 region’s) and the change in AI-active share since the first year, in percentage points.',
   inputs: ['region_adoption', 'names'],
   fn: (region_adoption, names) => {
     const name = {};
@@ -115,7 +115,7 @@ dash.calc('region_rows', {
       const level = Number(r.nuts_level);
       const parent = r.nuts_code.slice(0, 4);
       let label = name[r.nuts_code] ?? r.nuts_code;
-      if (level === 3) label = children[parent] === 1 ? (name[parent] ?? parent) : 'Part of ' + (name[parent] ?? parent);
+      if (level === 3 && !(r.nuts_code in name)) label = children[parent] === 1 ? (name[parent] ?? parent) : 'Part of ' + (name[parent] ?? parent);
       return {
         nuts_code: r.nuts_code,
         nuts_level: level,
@@ -901,7 +901,7 @@ if (document.fonts && document.fonts.ready) {
     setTimeout(() => redraw(['trend', 'counts', 'swarm', 'dumbbell-ind', 'mix-trend', 'mix-dumbbell', 'mix-heat', 'mix-industry']), 60),
   );
 }
-const recolor = () => redraw(['industry-table', 'ind-scale', 'mix-heat']);
+const recolor = () => redraw(['industry-table', 'ind-scale', 'mix-heat', 'map', 'map-scale', 'map-top', 'map-bottom']);
 new MutationObserver(recolor).observe(document.documentElement, {attributes: true, attributeFilter: ['class', 'data-theme']});
 if (document.body) new MutationObserver(recolor).observe(document.body, {attributes: true, attributeFilter: ['class', 'data-theme']});
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', recolor);
