@@ -2,6 +2,182 @@
 const MX = window.MX;
 const root = document.getElementById('dash-root') || document;
 
+// Show a region in the table below (from a click on the map, a dot or a ranked name).
+const findRegion = (code) => {
+  MX.regionQuery = code;
+  for (const input of root.querySelectorAll('.mx-search[data-for="region-table"]')) input.value = code;
+  dash.draw('region-table');
+};
+
+// The map: every region of the chosen level, shaded by its AI-active share.
+const regionYear = (all) => {
+  const atLevel = all.filter((r) => r.nuts_level === Number(MX.param('level')));
+  const years = MX.yearsOf(atLevel);
+  return {atLevel, years, sel: MX.selYear(years)};
+};
+// One scale for every year at a level, so the map darkens as AI spreads. The darkest color goes to the
+// 98th percentile, so a single outlier doesn't wash out the rest.
+const capOf = (atLevel) => {
+  const values = atLevel.map((r) => r.ai_adoption_share).filter((v) => v != null).sort(d3.ascending);
+  return d3.quantile(values, 0.98) || d3.max(values) || 1;
+};
+
+dash.draw('map', (el) => {
+  const st = MX.get('nuts_geo', 'region_rows');
+  if (!MX.chartState(el, st)) return;
+  const [geo, all] = st.data;
+  const level = Number(MX.param('level'));
+  const {atLevel, years, sel} = regionYear(all);
+  const frame = geo.find((g) => g.layer === 'frame');
+  if (!frame || !years.length) return;
+  const first = years[0];
+  const now = new Map(atLevel.filter((r) => r.year === sel && r.ai_adoption_share != null).map((r) => [r.nuts_code, r]));
+  const cap = capOf(atLevel);
+  const pal = MX.palette(el);
+  const has = (g) => now.has(g.id);
+  const fillOf = (g) => pal.fill(now.get(g.id).ai_adoption_share / cap);
+
+  const W = Math.max(240, el.clientWidth);
+  const H = Math.min(Math.round((W * frame.h) / frame.w), 700);
+  let svg = d3.select(el).select(':scope > svg.mx-map-svg');
+  if (svg.empty()) {
+    svg = d3.select(el).insert('svg', ':first-child').attr('class', 'mx-map-svg mx-in');
+    // Neighbouring countries fade out toward the edges instead of stopping at the frame.
+    const defs = svg.append('defs');
+    const fade = defs.append('radialGradient').attr('id', 'mx-map-fade-g').attr('cx', 0.5).attr('cy', 0.5).attr('r', 0.62);
+    fade.append('stop').attr('offset', 0.6).attr('stop-color', 'white');
+    fade.append('stop').attr('offset', 1).attr('stop-color', 'black');
+    defs.append('mask').attr('id', 'mx-map-fade').attr('maskContentUnits', 'objectBoundingBox')
+      .append('rect').attr('width', 1).attr('height', 1).attr('fill', 'url(#mx-map-fade-g)');
+  }
+  svg
+    .attr('viewBox', `0 0 ${frame.w} ${frame.h}`)
+    .attr('preserveAspectRatio', 'xMidYMid meet')
+    .attr('role', 'img')
+    .attr('aria-label', `Map of the share of firms that are AI-active in each NUTS ${level} region, ${sel}`)
+    .style('height', H + 'px');
+  el.style.minHeight = H + 'px';
+
+  MX.layer(svg, 'mx-map-context')
+    .attr('mask', 'url(#mx-map-fade)')
+    .selectAll('path')
+    .data(geo.filter((g) => g.layer === 'context'), (g) => g.id)
+    .join('path')
+    .attr('d', (g) => g.d);
+  const shapes = MX.layer(svg, 'mx-map-regions')
+    .selectAll('path')
+    .data(geo.filter((g) => g.layer === 'region' && g.level === level), (g) => g.id)
+    .join(
+      (enter) => enter.append('path').attr('class', 'mx-map-region').attr('d', (g) => g.d).style('fill', (g) => (has(g) ? fillOf(g) : null)),
+      (update) => update,
+      (exit) => exit.remove(),
+    )
+    .classed('is-empty', (g) => !has(g));
+  shapes.filter((g) => !has(g)).style('fill', null);
+  shapes.filter(has).transition().duration(MX.dur).style('fill', fillOf);
+  MX.layer(svg, 'mx-map-borders')
+    .selectAll('path')
+    .data(geo.filter((g) => g.layer === 'region' && g.level === 0), (g) => g.id)
+    .join('path')
+    .attr('d', (g) => g.d);
+  const outline = MX.layer(svg, 'mx-map-hover', 'path').style('display', 'none');
+
+  const tip = MX.tip(el);
+  shapes
+    .on('pointermove', (event, g) => {
+      outline.style('display', null).attr('d', g.d);
+      const r = now.get(g.id);
+      const rows = r
+        ? [
+            {color: fillOf(g), shape: 'box', name: 'AI-active, ' + sel, value: MX.fmtPct(r.ai_adoption_share), strong: true},
+            {name: 'classified firms', value: MX.fmtInt(r.n_firms)},
+          ]
+        : [{name: 'not in the tables', value: '—'}];
+      if (r && r.since_first_pp != null && sel !== first) rows.push({name: 'pp since ' + first, value: MX.fmtPP(r.since_first_pp)});
+      const [x, y] = MX.rel(event, el);
+      tip.show({title: (r ? r.label : g.name) + ' · ' + g.id, rows}, x, y);
+    })
+    .on('pointerleave', () => {
+      outline.style('display', 'none');
+      tip.hide();
+    })
+    .on('click', (event, g) => {
+      if (has(g)) findRegion(g.id);
+    });
+});
+
+dash.draw('map-scale', (el) => {
+  const st = MX.get('region_rows', 'nuts_geo');
+  if (st.status !== 'ok') {
+    el.replaceChildren();
+    return;
+  }
+  const [all, geo] = st.data;
+  const level = Number(MX.param('level'));
+  const {atLevel, sel} = regionYear(all);
+  const cap = capOf(atLevel);
+  const pal = MX.palette(el);
+  const text = (s) => {
+    const span = document.createElement('span');
+    span.textContent = s;
+    return span;
+  };
+  const row = (...parts) => {
+    const span = document.createElement('span');
+    span.className = 'mx-scale-row';
+    span.append(...parts);
+    return span;
+  };
+  const bar = document.createElement('span');
+  bar.className = 'mx-scale-bar';
+  bar.style.background = `linear-gradient(90deg, ${[0, 0.25, 0.5, 0.75, 1].map((t) => pal.fill(t)).join(', ')})`;
+  const rows = [row(text(d3.format('.0%')(0)), bar, text(MX.fmtPct(cap) + ' or more'))];
+  const shown = new Set(atLevel.filter((r) => r.year === sel && r.ai_adoption_share != null).map((r) => r.nuts_code));
+  if (geo.some((g) => g.layer === 'region' && g.level === level && !shown.has(g.id))) {
+    const key = document.createElement('i');
+    key.className = 'mx-key mx-key-empty';
+    rows.push(row(key, text('no figures in the tables')));
+  }
+  el.replaceChildren(...rows);
+});
+
+// The five highest and lowest regions, colored as on the map.
+const ranked = (name, pick) => {
+  dash.draw(name, (el) => {
+    const st = MX.get('region_rows');
+    if (st.status !== 'ok') {
+      el.replaceChildren();
+      return;
+    }
+    const {atLevel, sel} = regionYear(st.data[0]);
+    const cap = capOf(atLevel);
+    const pal = MX.palette(el);
+    const now = atLevel.filter((r) => r.year === sel && r.ai_adoption_share != null).sort((a, b) => b.ai_adoption_share - a.ai_adoption_share);
+    el.replaceChildren(
+      ...pick(now).map((r) => {
+        const li = document.createElement('li');
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'mx-rank-btn';
+        const swatch = document.createElement('i');
+        swatch.className = 'mx-rank-sw';
+        swatch.style.background = pal.fill(r.ai_adoption_share / cap);
+        const label = document.createElement('span');
+        label.className = 'mx-rank-name';
+        label.textContent = r.label;
+        const value = document.createElement('b');
+        value.textContent = MX.fmtPct(r.ai_adoption_share);
+        button.append(swatch, label, value);
+        button.addEventListener('click', () => findRegion(r.nuts_code));
+        li.append(button);
+        return li;
+      }),
+    );
+  });
+};
+ranked('map-top', (rows) => rows.slice(0, 5));
+ranked('map-bottom', (rows) => rows.slice(-5).reverse());
+
 // Place circles along their x, each at the height nearest the middle that touches none placed before.
 const dodge = (items, pad) => {
   const placed = [];
@@ -127,7 +303,7 @@ dash.draw('swarm', (el) => {
       .append('text')
       .attr('class', 'mx-note mx-halo')
       .attr('dy', '0.32em')
-      .text((level === 3 ? top.d.nuts_code : top.d.label) + ' ' + MX.fmtPct(top.d.ai_adoption_share));
+      .text(top.d.label.split(/[,/]/)[0].trim() + ' ' + MX.fmtPct(top.d.ai_adoption_share));
     const w = t.node().getComputedTextLength();
     const cy = b.cy + top.y;
     const lo = b.cy - b.half + 7;
@@ -177,10 +353,7 @@ dash.draw('swarm', (el) => {
     })
     .on('click', (event) => {
       const p = find(event);
-      if (!p) return;
-      MX.regionQuery = p.d.nuts_code;
-      for (const input of root.querySelectorAll('.mx-search[data-for="region-table"]')) input.value = p.d.nuts_code;
-      dash.draw('region-table');
+      if (p) findRegion(p.d.nuts_code);
     });
 });
 
