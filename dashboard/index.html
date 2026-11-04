@@ -132,6 +132,23 @@
         <button type="button" data-value="3" aria-pressed="true">NUTS 3 · small regions</button>
       </div>
     </div>
+    <article class="mx-card" id="map-card">
+      <header class="mx-card-head">
+        <h2 class="mx-card-title">AI adoption across regions in <span data-draw="sel-year" data-source="country_adoption">—</span></h2>
+        <p class="mx-card-note">Share of each region’s classified firms that are AI-active; darker is higher. The scale stays the same across years, so press Play to watch AI spread. Point at a region for its figures, and click it to find it in the table.</p>
+      </header>
+      <div class="mx-map-wrap">
+        <div class="mx-chart mx-map dash-skeleton" data-draw="map" data-source="nuts_geo region_rows"></div>
+        <aside class="mx-map-side" aria-label="Scale and extremes">
+          <div class="mx-scale" data-draw="map-scale" data-source="region_rows nuts_geo"></div>
+          <h3 class="mx-side-title">Highest shares</h3>
+          <ol class="mx-rank" data-draw="map-top" data-source="region_rows"></ol>
+          <h3 class="mx-side-title">Lowest shares</h3>
+          <ol class="mx-rank" data-draw="map-bottom" data-source="region_rows"></ol>
+        </aside>
+      </div>
+      <p class="mx-card-note">Boundaries: Eurostat GISCO, NUTS 2024 (© EuroGeographics for the administrative boundaries). The French outermost regions are not on the map; they are in the chart and the table below.</p>
+    </article>
     <article class="mx-card" id="swarm-card">
       <header class="mx-card-head">
         <h2 class="mx-card-title">Every region in <span data-draw="sel-year" data-source="country_adoption">—</span></h2>
@@ -142,7 +159,7 @@
     <article class="mx-card" id="region-list">
       <header class="mx-card-head">
         <h2 class="mx-card-title">All regions in <span data-draw="sel-year" data-source="country_adoption">—</span></h2>
-        <p class="mx-card-note">Sort by any column, or search by name, code or country. Small regions (NUTS 3) are named after the NUTS 2 region they belong to.</p>
+        <p class="mx-card-note">Sort by any column, or search by name, code or country.</p>
       </header>
       <input class="mx-search" type="search" data-for="region-table" placeholder="Search regions" aria-label="Search regions">
       <div class="mx-table-wrap mx-scroll">
@@ -297,7 +314,7 @@
           <li><b>Regions:</b> Eurostat NUTS 2024, levels 1 to 3.</li>
           <li><b>Industries:</b> NACE Rev. 2 sections and divisions, and NAICS 2022 sectors.</li>
         </ul>
-        <p class="mx-card-note">The repository also holds finer industries (NACE groups and classes, NAICS industry groups and industries) and roles and technology types by region, which this dashboard leaves out. Industry and region names were written out from the published classifications rather than downloaded: check them against Eurostat and the US Census Bureau before citing them.</p>
+        <p class="mx-card-note">The repository also holds finer industries (NACE groups and classes, NAICS industry groups and industries) and roles and technology types by region, which this dashboard leaves out. Region names and map boundaries come from Eurostat’s NUTS 2024 files (© EuroGeographics for the administrative boundaries). Industry names were written out from the published classifications rather than downloaded: check them against Eurostat and the US Census Bureau before citing them.</p>
       </article>
       <article class="mx-card" id="about-cite">
         <h2 class="mx-card-title">Cite and reuse</h2>
