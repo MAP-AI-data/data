@@ -14,6 +14,14 @@ works with. The indicator captures *realized* AI adoption rather than potential
 AI exposure. See the paper for the full classification methodology and
 validation.
 
+## Interactive dashboard
+
+[`dashboard/`](dashboard/) holds an interactive dashboard of these tables: AI
+adoption by country, region and industry, and the ecosystem roles and technology
+types of AI-active firms, year by year. See
+[`dashboard/README.md`](dashboard/README.md) for how to open it (for example on
+GitHub Pages) and how its data is built from the tables.
+
 ## What is in this repository
 
 This repository publishes aggregated **firm-share** tables. They cover the full
