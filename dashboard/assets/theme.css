@@ -1,0 +1,122 @@
+/*
+ * Design tokens for the standalone dashboard, in light and dark. The names match the hosted Claude
+ * dashboard's tokens so the page's stylesheet (style.css) and scripts stay the same in both places. Chart
+ * colors are a validated, color-blind-safe categorical palette with a blue sequential ramp.
+ */
+:root {
+  color-scheme: light;
+  --color-bg: #f6f5f1;
+  --color-panel: #ffffff;
+  --color-fg: #0b0b0b;
+  --color-fg-muted: #5f5e59;
+  --color-border-line: #e4e2db;
+  --color-ok: #006300;
+  --color-warn: #8a6100;
+  --color-bad: #d03b3b;
+
+  --cds-chart-categorical-1: #2a78d6;
+  --cds-chart-categorical-2: #eb6834;
+  --cds-chart-categorical-3: #1baf7a;
+  --cds-chart-categorical-4: #eda100;
+  --cds-chart-categorical-5: #e87ba4;
+  --cds-chart-categorical-6: #008300;
+  --cds-chart-categorical-7: #6250d6;
+  --cds-chart-categorical-8: #e34948;
+  --cds-chart-muted: #c3c2b7;
+  --cds-chart-grid: #ebeae4;
+  --cds-chart-axis: #c3c2b7;
+  --cds-chart-reference: #a09e96;
+
+  --cds-surface-popover: #ffffff;
+  --cds-border: rgba(11, 11, 11, 0.1);
+  --cds-shadow-popover: 0 8px 24px rgba(11, 11, 11, 0.1), 0 1px 3px rgba(11, 11, 11, 0.08);
+  --cds-text-secondary: #52514e;
+
+  --font-anthropic-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-anthropic-serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --cds-font-size-caption: 0.75rem;
+  --cds-font-size-body: 0.875rem;
+  --cds-font-size-heading: 1rem;
+  --cds-font-size-title: 1.6rem;
+  --cds-font-weight-medium: 600;
+
+  --cds-gap-xs: 6px;
+  --cds-gap-sm: 10px;
+  --cds-gap-md: 16px;
+  --cds-gap-lg: 28px;
+  --cds-gap-xl: 48px;
+  --cds-pad-xs: 6px;
+  --cds-pad-sm: 10px;
+  --cds-pad-md: 16px;
+  --cds-pad-lg: 12px;
+  --cds-pad-xl: 32px;
+  --cds-radius: 6px;
+  --cds-dur-slow: 0.45s;
+  --cds-ease-out: cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --color-bg: #0d0d0d;
+    --color-panel: #1a1a19;
+    --color-fg: #f0efec;
+    --color-fg-muted: #a9a79f;
+    --color-border-line: #2c2c2a;
+    --color-ok: #0ca30c;
+    --color-warn: #fab219;
+    --color-bad: #e66767;
+
+    --cds-chart-categorical-1: #3987e5;
+    --cds-chart-categorical-2: #d95926;
+    --cds-chart-categorical-3: #199e70;
+    --cds-chart-categorical-4: #c98500;
+    --cds-chart-categorical-5: #d55181;
+    --cds-chart-categorical-6: #008300;
+    --cds-chart-categorical-7: #9085e9;
+    --cds-chart-categorical-8: #e66767;
+    --cds-chart-muted: #4b4a46;
+    --cds-chart-grid: #2a2a28;
+    --cds-chart-axis: #3d3d3a;
+    --cds-chart-reference: #6f6d67;
+
+    --cds-surface-popover: #242422;
+    --cds-border: rgba(255, 255, 255, 0.1);
+    --cds-shadow-popover: 0 10px 28px rgba(0, 0, 0, 0.55);
+    --cds-text-secondary: #c3c2b7;
+  }
+}
+
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-anthropic-sans);
+  font-size: var(--cds-font-size-body);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+#dash-root { padding-inline: clamp(16px, 3.5vw, 48px); }
+
+/* Placeholders while data loads */
+.dash-skeleton {
+  color: transparent !important;
+  border-radius: var(--cds-radius);
+  background-color: color-mix(in srgb, var(--color-fg) 7%, transparent);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .dash-skeleton { animation: dash-pulse 1.4s ease-in-out infinite; }
+}
+@keyframes dash-pulse {
+  50% { opacity: 0.55; }
+}
+
+.dash-note {
+  margin: 16px clamp(16px, 3.5vw, 48px) 0;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border-line);
+  border-radius: var(--cds-radius);
+  background: var(--color-panel);
+  font-size: var(--cds-font-size-body);
+}

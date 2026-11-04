@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MAP-AI · AI adoption in European firms</title>
+<meta name="description" content="Interactive dashboard of firm-level AI adoption, AI ecosystem roles and AI technology types in Belgium, France, Germany and Luxembourg, 2016–2024, from the MAP-AI data.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232a78d6'/%3E%3Ccircle cx='9' cy='22' r='3.2' fill='white'/%3E%3Ccircle cx='16' cy='15.5' r='3.2' fill='white'/%3E%3Ccircle cx='23' cy='9' r='3.2' fill='white'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/theme.css">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/vendor/d3.min.js"></script>
+<script src="assets/dash.js"></script>
+</head>
+<body>
+<div id="dash-root">
+<div class="mx" id="mapai">
+  <header class="mx-head" id="top">
+    <p class="mx-eyebrow">MAP-AI · Mapping Artificial Intelligence in Firms</p>
+    <h1 class="mx-title">AI adoption in European firms</h1>
+    <p class="mx-lede">In <b data-draw="last-year" data-source="country_adoption">—</b>, <b data-draw="lede-share" data-source="adoption_by_country" data-field="share" data-fetchpriority="high">—</b> of the <b data-draw="lede-firms" data-source="adoption_by_country" data-field="n_firms">—</b> classified firms in Belgium, France, Germany and Luxembourg were AI-active: <b data-draw="lede-multiple" data-source="adoption_by_country" data-field="multiple">—</b> times the share in <b data-draw="first-year" data-source="country_adoption">—</b>.</p>
+  </header>
+
+  <div class="mx-bar">
+    <nav class="mx-tabs" role="tablist" aria-label="Dashboard views">
+      <button class="mx-tab" type="button" role="tab" data-tab="overview" aria-selected="true">Overview</button>
+      <button class="mx-tab" type="button" role="tab" data-tab="regions" aria-selected="false">Regions</button>
+      <button class="mx-tab" type="button" role="tab" data-tab="industries" aria-selected="false">Industries</button>
+      <button class="mx-tab" type="button" role="tab" data-tab="tech" aria-selected="false">Technologies &amp; roles</button>
+      <button class="mx-tab" type="button" role="tab" data-tab="about" aria-selected="false">About the data</button>
+    </nav>
+    <div class="mx-yearctl">
+      <span class="mx-ctl-label" id="mx-year-label">Year</span>
+      <div class="mx-years" role="radiogroup" aria-labelledby="mx-year-label" data-draw="years" data-source="country_adoption"></div>
+      <button class="mx-play" type="button" aria-pressed="false" aria-label="Play through the years">
+        <span data-play="off"><i class="mx-ico-play" aria-hidden="true"></i>Play</span>
+        <span data-play="on" hidden><i class="mx-ico-pause" aria-hidden="true"></i>Pause</span>
+      </button>
+    </div>
+  </div>
+
+  <section class="mx-page" id="overview" role="tabpanel" aria-label="Overview">
+    <div class="mx-kpis">
+      <article class="mx-card mx-kpi" id="kpi-share-card">
+        <h2 class="mx-kpi-label">AI-active share</h2>
+        <p class="mx-kpi-value"><span data-draw="kpi-share" data-source="adoption_by_country" data-field="share" data-fetchpriority="high">—</span></p>
+        <p class="mx-kpi-delta"><span class="mx-delta mx-pp" data-draw="kpi-share-delta" data-source="adoption_by_country" data-field="change_pp">—</span> <span data-draw="vs-prev" data-source="country_adoption">—</span></p>
+        <div class="mx-spark" data-draw="spark-share" data-source="adoption_by_country"></div>
+        <p class="mx-kpi-note">Classified firms that are AI-active, all four countries together</p>
+      </article>
+      <article class="mx-card mx-kpi" id="kpi-ai-card">
+        <h2 class="mx-kpi-label">AI-active firms</h2>
+        <p class="mx-kpi-value"><span data-draw="kpi-ai" data-source="adoption_by_country" data-field="n_ai" data-fetchpriority="high">—</span></p>
+        <p class="mx-kpi-delta"><span class="mx-delta" data-draw="kpi-ai-delta" data-source="adoption_by_country" data-field="n_ai_change">—</span> <span data-draw="vs-prev" data-source="country_adoption">—</span></p>
+        <div class="mx-spark" data-draw="spark-ai" data-source="adoption_by_country"></div>
+        <p class="mx-kpi-note">Firms whose websites show they use, develop or deploy AI</p>
+      </article>
+      <article class="mx-card mx-kpi" id="kpi-firms-card">
+        <h2 class="mx-kpi-label">Classified firms</h2>
+        <p class="mx-kpi-value"><span data-draw="kpi-firms" data-source="adoption_by_country" data-field="n_firms">—</span></p>
+        <p class="mx-kpi-delta"><span class="mx-delta" data-draw="kpi-firms-delta" data-source="adoption_by_country" data-field="n_firms_change">—</span> <span data-draw="vs-prev" data-source="country_adoption">—</span></p>
+        <div class="mx-spark" data-draw="spark-firms" data-source="adoption_by_country"></div>
+        <p class="mx-kpi-note">Firms matched to classified website content that year</p>
+      </article>
+      <article class="mx-card mx-kpi" id="kpi-genai-card">
+        <h2 class="mx-kpi-label">Generative AI</h2>
+        <p class="mx-kpi-value"><span data-draw="kpi-genai" data-source="mix_by_country" data-field="share">—</span></p>
+        <p class="mx-kpi-delta"><span class="mx-delta mx-pp" data-draw="kpi-genai-delta" data-source="mix_by_country" data-field="change_pp">—</span> <span data-draw="vs-prev" data-source="country_adoption">—</span></p>
+        <div class="mx-spark" data-draw="spark-genai" data-source="mix_by_country"></div>
+        <p class="mx-kpi-note">AI-active firms working with generative AI and conversational systems</p>
+      </article>
+    </div>
+
+    <article class="mx-card" id="diffusion">
+      <header class="mx-card-head">
+        <h2 class="mx-card-title">How AI spread through firms</h2>
+        <p class="mx-card-note">Share of classified firms that are AI-active. Once a firm’s website shows AI, it counts in every later year. Click the chart to pick a year.</p>
+      </header>
+      <ul class="mx-legend" aria-label="Lines">
+        <li><i class="mx-key mx-key-line" data-key="All four countries"></i>All four countries</li>
+        <li><i class="mx-key mx-key-line" data-key="Belgium"></i>Belgium</li>
+        <li><i class="mx-key mx-key-line" data-key="France"></i>France</li>
+        <li><i class="mx-key mx-key-line" data-key="Germany"></i>Germany</li>
+        <li><i class="mx-key mx-key-line" data-key="Luxembourg"></i>Luxembourg</li>
+      </ul>
+      <div class="mx-chart mx-h-trend dash-skeleton" data-draw="trend" data-source="adoption_by_country"></div>
+    </article>
+
+    <div class="mx-grid">
+      <article class="mx-card" id="ai-firms">
+        <header class="mx-card-head">
+          <h2 class="mx-card-title">AI-active firms by country</h2>
+          <p class="mx-card-note">Number of AI-active firms each year, stacked by country. Click a bar to pick its year.</p>
+        </header>
+        <ul class="mx-legend" aria-label="Countries">
+          <li><i class="mx-key" data-key="Belgium"></i>Belgium</li>
+          <li><i class="mx-key" data-key="France"></i>France</li>
+          <li><i class="mx-key" data-key="Germany"></i>Germany</li>
+          <li><i class="mx-key" data-key="Luxembourg"></i>Luxembourg</li>
+        </ul>
+        <div class="mx-chart mx-h-counts dash-skeleton" data-draw="counts" data-source="adoption_by_country"></div>
+      </article>
+      <article class="mx-card" id="countries">
+        <header class="mx-card-head">
+          <h2 class="mx-card-title">Countries in <span data-draw="sel-year" data-source="country_adoption">—</span></h2>
+          <p class="mx-card-note">Change is in percentage points on the year before. Growth is the share now divided by the share in <span data-draw="first-year" data-source="country_adoption">—</span>.</p>
+        </header>
+        <div class="mx-table-wrap">
+          <table class="mx-table" data-source="adoption_by_country" data-row-key="country,year">
+            <thead>
+              <tr>
+                <th scope="col" data-field="country">Country</th>
+                <th scope="col" class="num" data-field="share">AI-active share</th>
+                <th scope="col" class="num" data-field="change_pp">Change (pp)</th>
+                <th scope="col" class="num mx-hide-narrow" data-field="n_ai">AI-active firms</th>
+                <th scope="col" class="num mx-hide-narrow" data-field="n_firms">Classified firms</th>
+                <th scope="col" class="num" data-field="multiple">Growth</th>
+              </tr>
+            </thead>
+            <tbody data-draw="country-table"></tbody>
+          </table>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="mx-page" id="regions" role="tabpanel" aria-label="Regions" hidden>
+    <div class="mx-filters">
+      <span class="mx-ctl-label">Regional level</span>
+      <div class="mx-seg" data-param="level" role="group" aria-label="Regional level">
+        <button type="button" data-value="1" aria-pressed="false">NUTS 1 · large regions</button>
+        <button type="button" data-value="2" aria-pressed="false">NUTS 2 · basic regions</button>
+        <button type="button" data-value="3" aria-pressed="true">NUTS 3 · small regions</button>
+      </div>
+    </div>
+    <article class="mx-card" id="swarm-card">
+      <header class="mx-card-head">
+        <h2 class="mx-card-title">Every region in <span data-draw="sel-year" data-source="country_adoption">—</span></h2>
+        <p class="mx-card-note">Each dot is a region, placed by its AI-active share and sized by its number of classified firms. The dark tick marks each country’s median region. Press Play to watch the years go by, and click a dot to find it in the table.</p>
+      </header>
+      <div class="mx-chart mx-h-swarm dash-skeleton" data-draw="swarm" data-source="region_rows"></div>
+    </article>
+    <article class="mx-card" id="region-list">
+      <header class="mx-card-head">
+        <h2 class="mx-card-title">All regions in <span data-draw="sel-year" data-source="country_adoption">—</span></h2>
+        <p class="mx-card-note">Sort by any column, or search by name, code or country. Small regions (NUTS 3) are named after the NUTS 2 region they belong to.</p>
+      </header>
+      <input class="mx-search" type="search" data-for="region-table" placeholder="Search regions" aria-label="Search regions">
+      <div class="mx-table-wrap mx-scroll">
+        <table class="mx-table" data-source="region_rows" data-row-key="nuts_code,year" data-sortable="region">
+          <thead>
+            <tr>
+              <th scope="col" data-field="nuts_code" aria-sort="none"><button class="mx-sort" type="button" data-sort="nuts_code">Code</button></th>
+              <th scope="col" data-field="label" aria-sort="none"><button class="mx-sort" type="button" data-sort="label">Region</button></th>
+              <th scope="col" class="mx-hide-narrow" data-field="country" aria-sort="none"><button class="mx-sort" type="button" data-sort="country">Country</button></th>
+              <th scope="col" class="num" data-field="ai_adoption_share" aria-sort="descending"><button class="mx-sort" type="button" data-sort="ai_adoption_share">AI-active share</button></th>
+              <th scope="col" class="num" data-field="since_first_pp" aria-sort="none"><button class="mx-sort" type="button" data-sort="since_first_pp">Since <span data-draw="first-year" data-source="country_adoption">—</span> (pp)</button></th>
+              <th scope="col" class="num mx-hide-narrow" data-field="n_firms" aria-sort="none"><button class="mx-sort" type="button" data-sort="n_firms">Classified firms</button></th>
+            </tr>
+          </thead>
+          <tbody data-draw="region-table"></tbody>
+        </table>
+      </div>
+    </article>
+  </section>
+
+  <section class="mx-page" id="industries" role="tabpanel" aria-label="Industries" hidden>
+    <div class="mx-filters">
+      <span class="mx-ctl-label">Industries</span>
+      <div class="mx-seg" data-param="ind" role="group" aria-label="Industry classification">
+        <button type="button" data-value="nace1" aria-pressed="true">NACE sections</button>
+        <button type="button" data-value="nace2" aria-pressed="false">NACE divisions</button>
+        <button type="button" data-value="naics2" aria-pressed="false">NAICS sectors</button>
+      </div>
+      <span class="mx-ctl-label">Country</span>
+      <div class="mx-seg" data-param="country" role="group" aria-label="Country">
+        <button type="button" data-value="All four countries" aria-pressed="true">All four</button>
+        <button type="button" data-value="Belgium" aria-pressed="false">Belgium</button>
+        <button type="button" data-value="France" aria-pressed="false">France</button>
+        <button type="button" data-value="Germany" aria-pressed="false">Germany</button>
+        <button type="button" data-value="Luxembourg" aria-pressed="false">Luxembourg</button>
+      </div>
+    </div>
+    <article class="mx-card" id="industry-change">
+      <header class="mx-card-head">
+        <h2 class="mx-card-title">Industries from <span data-draw="first-year" data-source="country_adoption">—</span> to <span data-draw="sel-year" data-source="country_adoption">—</span></h2>
+        <p class="mx-card-note">AI-active share of each industry’s classified firms, ranked. Industries with fewer than <span data-draw="min-firms">—</span> firms have no share.</p>
+      </header>
+      <ul class="mx-legend" aria-label="Dots">
+        <li><i class="mx-key mx-key-hollow"></i><span data-draw="first-year" data-source="country_adoption">—</span></li>
+        <li><i class="mx-key mx-key-dot" data-key-country></i><span data-draw="sel-year" data-source="country_adoption">—</span></li>
+      </ul>
+      <div class="mx-chart mx-h-dumbbell dash-skeleton" data-draw="dumbbell-ind" data-source="industry_wide"></div>
+      <button class="mx-more" type="button" aria-expanded="false" hidden><span data-more="all">Show all divisions</span><span data-more="top" hidden>Show the top divisions only</span></button>
+    </article>
+    <article class="mx-card" id="industry-grid">
+      <header class="mx-card-head">
+        <h2 class="mx-card-title">Industries by country in <span data-draw="sel-year" data-source="country_adoption">—</span></h2>
+        <p class="mx-card-note">AI-active share; darker is higher. Hatched cells have fewer than <span data-draw="min-firms">—</span> classified firms. Sort by any column, or search.</p>
+      </header>
+      <div class="mx-tools">
+        <input class="mx-search" type="search" data-for="industry-table" placeholder="Search industries" aria-label="Search industries">
+        <div class="mx-scale" data-draw="ind-scale" data-source="industry_wide" aria-hidden="true"></div>
+      </div>
+      <div class="mx-table-wrap mx-scroll">
+        <table class="mx-table mx-heat-table" data-source="industry_wide" data-row-key="id" data-sortable="industry">
+          <thead>
+            <tr>
+              <th scope="col" class="mx-hide-narrow" data-field="code" aria-sort="none"><button class="mx-sort" type="button" data-sort="code">Code</button></th>
+              <th scope="col" data-field="name" aria-sort="none"><button class="mx-sort" type="button" data-sort="name">Industry</button></th>
+              <th scope="col" class="num" data-field="all_four" aria-sort="none"><button class="mx-sort" type="button" data-sort="all_four">All four</button></th>
+              <th scope="col" class="num" data-field="belgium" aria-sort="none"><button class="mx-sort" type="button" data-sort="belgium">Belgium</button></th>
+              <th scope="col" class="num" data-field="france" aria-sort="none"><button class="mx-sort" type="button" data-sort="france">France</button></th>
+              <th scope="col" class="num" data-field="germany" aria-sort="none"><button class="mx-sort" type="button" data-sort="germany">Germany</button></th>
+              <th scope="col" class="num" data-field="luxembourg" aria-sort="none"><button class="mx-sort" type="button" data-sort="luxembourg">Luxembourg</button></th>
+              <th scope="col" class="num mx-hide-narrow" data-field="n_firms" aria-sort="none"><button class="mx-sort" type="button" data-sort="n_firms">Classified firms</button></th>
+            </tr>
+          </thead>
+          <tbody data-draw="industry-table"></tbody>
+        </table>
+      </div>
+    </article>
+  </section>
+
+  <section class="mx-page" id="tech" role="tabpanel" aria-label="Technologies and roles" hidden>
+    <div class="mx-filters">
+      <span class="mx-ctl-label">Breakdown</span>
+      <div class="mx-seg" data-param="bd" role="group" aria-label="Breakdown">
+        <button type="button" data-value="type" aria-pressed="true">Technology types</button>
+        <button type="button" data-value="role" aria-pressed="false">Ecosystem roles</button>
+      </div>
+      <span class="mx-ctl-label">Country</span>
+      <div class="mx-seg" data-param="country" role="group" aria-label="Country">
+        <button type="button" data-value="All four countries" aria-pressed="true">All four</button>
+        <button type="button" data-value="Belgium" aria-pressed="false">Belgium</button>
+        <button type="button" data-value="France" aria-pressed="false">France</button>
+        <button type="button" data-value="Germany" aria-pressed="false">Germany</button>
+        <button type="button" data-value="Luxembourg" aria-pressed="false">Luxembourg</button>
+      </div>
+      <label class="mx-ctl-label" for="mx-focus">Highlight</label>
+      <select class="mx-select" id="mx-focus" data-draw="focus" data-source="mix_by_country"></select>
+    </div>
+    <article class="mx-card" id="mix-trend-card">
+      <header class="mx-card-head">
+        <h2 class="mx-card-title"><span data-bd="type">Technology types</span><span data-bd="role" hidden>Ecosystem roles</span> of AI-active firms</h2>
+        <p class="mx-card-note">Share of AI-active firms in each category, by year. A firm can be in several categories, so the shares add up to more than 100%. Click the chart to pick a year.</p>
+      </header>
+      <ul class="mx-legend" aria-label="Lines">
+        <li><i class="mx-key mx-key-line mx-key-accent"></i><span data-draw="focus-name" data-source="mix_by_country">—</span></li>
+        <li><i class="mx-key mx-key-line mx-key-muted"></i><span data-bd="type">Other technology types</span><span data-bd="role" hidden>Other roles</span></li>
+      </ul>
+      <div class="mx-chart mx-h-trend dash-skeleton" data-draw="mix-trend" data-source="mix_by_country"></div>
+    </article>
+    <div class="mx-grid">
+      <article class="mx-card" id="mix-change">
+        <header class="mx-card-head">
+          <h2 class="mx-card-title">From <span data-draw="first-year" data-source="country_adoption">—</span> to <span data-draw="sel-year" data-source="country_adoption">—</span></h2>
+          <p class="mx-card-note">Share of AI-active firms: hollow dot <span data-draw="first-year" data-source="country_adoption">—</span>, filled dot <span data-draw="sel-year" data-source="country_adoption">—</span>. Click a row to highlight it.</p>
+        </header>
+        <div class="mx-chart mx-h-mix dash-skeleton" data-draw="mix-dumbbell" data-source="mix_by_country"></div>
+      </article>
+      <article class="mx-card" id="mix-countries">
+        <header class="mx-card-head">
+          <h2 class="mx-card-title">Countries in <span data-draw="sel-year" data-source="country_adoption">—</span></h2>
+          <p class="mx-card-note">Share of AI-active firms; darker is higher. Click a row to highlight it.</p>
+        </header>
+        <div class="mx-chart mx-h-mix dash-skeleton" data-draw="mix-heat" data-source="mix_by_country"></div>
+      </article>
+    </div>
+    <article class="mx-card" id="mix-industries">
+      <header class="mx-card-head">
+        <h2 class="mx-card-title"><span data-draw="focus-name" data-source="mix_by_country">—</span> by industry in <span data-draw="sel-year" data-source="country_adoption">—</span></h2>
+        <p class="mx-card-note">Share of each NACE section’s AI-active firms; the dashed line is all industries together. Sections with fewer than <span data-draw="min-firms">—</span> AI-active firms have no share.</p>
+      </header>
+      <div class="mx-chart mx-h-bars dash-skeleton" data-draw="mix-industry" data-source="industry_types industry_roles names mix_by_country"></div>
+    </article>
+  </section>
+
+  <section class="mx-page" id="about" role="tabpanel" aria-label="About the data" hidden>
+    <div class="mx-grid">
+      <article class="mx-card" id="about-measures">
+        <h2 class="mx-card-title">What the numbers mean</h2>
+        <dl class="mx-defs">
+          <div><dt>AI-active firm</dt><dd>A firm whose website, read by a large language model, shows that it uses, develops or deploys AI. MAP-AI measures adoption that has happened, not exposure to AI.</dd></div>
+          <div><dt>Cumulative</dt><dd>Once a firm is classified as AI-active, it counts in every later year. Roles and technology types work the same way.</dd></div>
+          <div><dt>Classified firms</dt><dd>Firms that could be matched to classified website content in a year: the denominator of every AI-active share.</dd></div>
+          <div><dt>Roles and technology types</dt><dd>Given only to AI-active firms, and a firm can have several, so the shares of AI-active firms add up to more than 100%.</dd></div>
+          <div><dt>All four countries</dt><dd>For the countries together, this dashboard adds up AI-active firms (or firms in a category) across Belgium, France, Germany and Luxembourg and divides by the summed denominator. For industries it uses the repository’s own pooled rows.</dd></div>
+          <div><dt>Withheld shares</dt><dd>A share is withheld when its denominator has fewer than <b data-draw="min-firms">—</b> firms. Here those show as hatched cells or missing dots.</dd></div>
+        </dl>
+      </article>
+      <article class="mx-card" id="about-source">
+        <h2 class="mx-card-title">Source and coverage</h2>
+        <ul class="mx-list">
+          <li><b>Source:</b> firm websites from Common Crawl, classified with the MAP-AI method.</li>
+          <li><b>Countries:</b> Belgium, France, Germany and Luxembourg.</li>
+          <li><b>Years:</b> <span data-draw="first-year" data-source="country_adoption">—</span> to <span data-draw="last-year" data-source="country_adoption">—</span>.</li>
+          <li><b>Regions:</b> Eurostat NUTS 2024, levels 1 to 3.</li>
+          <li><b>Industries:</b> NACE Rev. 2 sections and divisions, and NAICS 2022 sectors.</li>
+        </ul>
+        <p class="mx-card-note">The repository also holds finer industries (NACE groups and classes, NAICS industry groups and industries) and roles and technology types by region, which this dashboard leaves out. Industry and region names were written out from the published classifications rather than downloaded: check them against Eurostat and the US Census Bureau before citing them.</p>
+      </article>
+      <article class="mx-card" id="about-cite">
+        <h2 class="mx-card-title">Cite and reuse</h2>
+        <p class="mx-prose">Garbers, Julio and Terry Gregory. “The Diffusion of Artificial Intelligence Across Firms: Evidence from Europe.” IZA Discussion Paper No. 18434, 2026.</p>
+        <p class="mx-prose"><a href="https://docs.iza.org/dp18434.pdf" target="_blank" rel="noopener">Read the paper</a> · <a href="https://github.com/MAP-AI-data/data" target="_blank" rel="noopener">Get the data</a></p>
+        <p class="mx-card-note">The data are licensed CC BY 4.0: share and adapt them for any purpose, crediting the paper above.</p>
+      </article>
+    </div>
+  </section>
+
+  <footer class="mx-foot">
+    <p>Data: <a href="https://github.com/MAP-AI-data/data" target="_blank" rel="noopener">MAP-AI-data/data</a> v1.1.0, CC BY 4.0. Method: Garbers and Gregory (2026), <a href="https://docs.iza.org/dp18434.pdf" target="_blank" rel="noopener">IZA Discussion Paper No. 18434</a>.</p>
+  </footer>
+</div>
+</div>
+<script type="module" src="assets/lib.js"></script>
+<script type="module" src="assets/overview.js"></script>
+<script type="module" src="assets/regions.js"></script>
+<script type="module" src="assets/industries.js"></script>
+<script type="module" src="assets/tech.js"></script>
+</body>
+</html>

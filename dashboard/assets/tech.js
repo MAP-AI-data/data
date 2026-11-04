@@ -1,0 +1,257 @@
+// Technologies and roles: the mix of AI-active firms over time, by country and by industry.
+const MX = window.MX;
+
+const SHORT_COUNTRY = {'All four countries': 'All', Belgium: 'BE', France: 'FR', Germany: 'DE', Luxembourg: 'LU'};
+const categoriesOf = (rows, kind) => {
+  const seen = new Map();
+  for (const r of rows) if (r.kind === kind && !seen.has(r.code)) seen.set(r.code, {code: r.code, short: r.short, label: r.label});
+  return [...seen.values()].sort((a, b) => a.code - b.code);
+};
+const context = (rows) => {
+  const kind = MX.param('bd');
+  const cats = categoriesOf(rows, kind);
+  return {kind, cats, focus: MX.focus(kind, cats.map((c) => c.code)), country: MX.param('country')};
+};
+
+dash.draw('focus', (select) => {
+  const st = MX.get('mix_by_country');
+  if (st.status !== 'ok') {
+    select.replaceChildren();
+    return;
+  }
+  const {cats, focus} = context(st.data[0]);
+  select.replaceChildren(...cats.map((c) => new Option(c.short, String(c.code))));
+  select.value = String(focus);
+  select.onchange = () => dash.setParams({focus: Number(select.value)});
+});
+
+dash.draw('focus-name', (el) => {
+  const st = MX.get('mix_by_country');
+  if (!MX.textState(el, st)) return;
+  const {cats, focus} = context(st.data[0]);
+  const c = cats.find((x) => x.code === focus);
+  el.textContent = c ? c.short : '—';
+});
+
+// Each category over the years; the highlighted one in color, the rest muted.
+dash.draw('mix-trend', (el) => {
+  const st = MX.get('mix_by_country');
+  if (!MX.chartState(el, st)) return;
+  const {kind, cats, focus, country} = context(st.data[0]);
+  const rows = st.data[0].filter((r) => r.kind === kind && r.country === country);
+  const years = MX.yearsOf(rows);
+  const series = cats
+    .map((c) => ({
+      key: c.code,
+      name: c.short,
+      focus: c.code === focus,
+      color: c.code === focus ? MX.accent() : 'var(--cds-chart-muted)',
+      values: rows.filter((r) => r.code === c.code && r.share != null).sort((a, b) => a.year - b.year),
+    }))
+    .filter((s) => s.values.length);
+  MX.lineChart(el, {
+    series,
+    years,
+    sel: MX.selYear(years),
+    label: 'Line chart of the share of AI-active firms in each category, by year',
+    value: (d) => d.share,
+    endLabel: (s, narrow) => (s.focus ? (narrow ? '' : s.name + '  ') + MX.fmtPct(s.values[s.values.length - 1].share) : null),
+    widthOf: (s) => (s.focus ? 2.75 : 1.5),
+    tipName: (s) => s.name,
+    strong: (s) => s.focus,
+    dot: (s) => s.focus,
+  });
+});
+
+// First year against the selected year, per category.
+dash.draw('mix-dumbbell', (el) => {
+  const st = MX.get('mix_by_country');
+  if (!MX.chartState(el, st)) return;
+  const {kind, cats, focus, country} = context(st.data[0]);
+  const rows = st.data[0].filter((r) => r.kind === kind && r.country === country);
+  const years = MX.yearsOf(rows);
+  const sel = MX.selYear(years);
+  const first = years[0];
+  const items = cats
+    .map((c) => {
+      const a = rows.find((r) => r.code === c.code && r.year === first);
+      const b = rows.find((r) => r.code === c.code && r.year === sel);
+      return {
+        key: c.code,
+        label: c.short,
+        name: c.label,
+        v0: a ? a.share : null,
+        v1: b ? b.share : null,
+        strong: c.code === focus,
+        color: c.code === focus ? MX.accent() : 'var(--color-fg-muted)',
+      };
+    })
+    .sort((p, q) => (q.v1 ?? -1) - (p.v1 ?? -1));
+  MX.dumbbell(el, {
+    items,
+    max: d3.max(rows, (r) => r.share),
+    rowH: 28,
+    label: 'Dot plot of each category’s share of AI-active firms in the first and the selected year',
+    naText: 'withheld',
+    onClick: (d) => dash.setParams({focus: d.key}),
+    tip: (d) => {
+      const tipRows = [
+        {color: d.color, shape: 'dot', name: 'of AI-active firms, ' + sel, value: d.v1 == null ? 'withheld' : MX.fmtPct(d.v1), strong: true},
+        {name: 'of AI-active firms, ' + first, value: d.v0 == null ? 'withheld' : MX.fmtPct(d.v0)},
+      ];
+      if (d.v0 != null && d.v1 != null && sel !== first) tipRows.push({name: 'pp change', value: MX.fmtPP((d.v1 - d.v0) * 100)});
+      return {title: d.name, rows: tipRows};
+    },
+  });
+});
+
+// Categories against countries for the selected year.
+dash.draw('mix-heat', (el) => {
+  const st = MX.get('mix_by_country');
+  if (!MX.chartState(el, st)) return;
+  const {kind, cats, focus, country} = context(st.data[0]);
+  const rows = st.data[0].filter((r) => r.kind === kind);
+  const sel = MX.selYear(MX.yearsOf(rows));
+  const now = rows.filter((r) => r.year === sel);
+  const value = (code, c) => {
+    const r = now.find((x) => x.code === code && x.country === c);
+    return r && r.share != null ? r : null;
+  };
+  const cols = [MX.ALL, ...MX.COUNTRIES];
+  const order = [...cats].sort((a, b) => ((value(b.code, MX.ALL) || {}).share ?? -1) - ((value(a.code, MX.ALL) || {}).share ?? -1));
+  const cap = d3.max(rows, (r) => r.share) || 1;
+  const pal = MX.palette(el);
+  const W = Math.max(260, el.clientWidth);
+  const svg = MX.svg(el, W, 10, 'Heat map of each category’s share of AI-active firms by country');
+  svg.selectAll('*').remove();
+  const labelW = Math.min(MX.textWidth(svg, order.map((c) => c.short), 'mx-rowlabel mx-strong'), Math.floor(W * 0.4));
+  const gridW = W - labelW - 14;
+  const colW = gridW / cols.length;
+  const full = cols.map((c) => (c === MX.ALL ? 'All four' : c));
+  const heads = MX.textWidth(svg, full, 'mx-tick mx-strong') <= colW - 8 ? full : cols.map((c) => SHORT_COUNTRY[c]);
+  const rowH = 28;
+  const top = 24;
+  const H = top + order.length * rowH + 2;
+  MX.svg(el, W, H);
+  const g = svg.append('g').attr('transform', `translate(${labelW + 14},${top})`);
+  cols.forEach((c, j) => {
+    g.append('text')
+      .attr('class', c === country ? 'mx-tick mx-strong' : 'mx-tick')
+      .attr('x', j * colW + colW / 2)
+      .attr('y', -9)
+      .attr('text-anchor', 'middle')
+      .text(heads[j]);
+  });
+  const showText = colW >= 44;
+  const tip = MX.tip(el);
+  order.forEach((cat, i) => {
+    const row = g
+      .append('g')
+      .attr('class', cat.code === focus ? 'mx-hrow is-strong' : 'mx-hrow')
+      .attr('transform', `translate(0,${i * rowH})`)
+      .attr('tabindex', 0)
+      .style('cursor', 'pointer')
+      .on('click', () => dash.setParams({focus: cat.code}))
+      .on('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          dash.setParams({focus: cat.code});
+          event.preventDefault();
+        }
+      });
+    row.append('rect').attr('class', 'mx-rowhit').attr('x', -labelW - 14).attr('width', W).attr('height', rowH);
+    row
+      .append('text')
+      .attr('class', 'mx-rowlabel')
+      .attr('x', -12)
+      .attr('y', rowH / 2)
+      .attr('dy', '0.32em')
+      .attr('text-anchor', 'end')
+      .text(cat.short)
+      .each(function () {
+        MX.fit(this, labelW);
+      });
+    cols.forEach((c, j) => {
+      const r = value(cat.code, c);
+      row
+        .append('rect')
+        .attr('class', 'mx-cell')
+        .attr('x', j * colW)
+        .attr('y', 0)
+        .attr('width', colW)
+        .attr('height', rowH)
+        .attr('rx', 4)
+        .style('fill', r ? pal.fill(r.share / cap) : 'transparent')
+        .on('pointermove', (event) => {
+          const [px, py] = MX.rel(event, el);
+          tip.show(
+            {
+              title: cat.label,
+              rows: [
+                {name: 'of AI-active firms in ' + (c === MX.ALL ? 'all four countries' : c), value: r ? MX.fmtPct(r.share) : 'withheld', strong: true},
+                ...(r ? [{name: 'AI-active firms', value: MX.fmtInt(r.n_ai)}] : []),
+              ],
+            },
+            px,
+            py,
+          );
+        })
+        .on('pointerleave', () => tip.hide());
+      if (showText && r) {
+        row
+          .append('text')
+          .attr('class', 'mx-cellval')
+          .attr('x', j * colW + colW / 2)
+          .attr('y', rowH / 2)
+          .attr('dy', '0.32em')
+          .attr('text-anchor', 'middle')
+          .style('fill', pal.ink(r.share / cap))
+          .text(MX.fmtPct(r.share));
+      }
+    });
+    if (cat.code === focus) row.append('rect').attr('class', 'mx-focusbox').attr('x', 0.75).attr('y', 0.75).attr('width', gridW - 1.5).attr('height', rowH - 1.5).attr('rx', 4);
+  });
+});
+
+// The highlighted category across industries, with all industries as a dashed line.
+dash.draw('mix-industry', (el) => {
+  const kind = MX.param('bd');
+  const st = MX.get(kind === 'type' ? 'industry_types' : 'industry_roles', 'names', 'mix_by_country');
+  if (!MX.chartState(el, st)) return;
+  const [rows, names, mix] = st.data;
+  const {cats, focus, country} = context(mix);
+  const codeCol = kind === 'type' ? 'ai_type' : 'ai_role';
+  const shareCol = kind === 'type' ? 'type_share_among_ai_firms' : 'role_share_among_ai_firms';
+  const source = country === MX.ALL ? 'Pooled' : country;
+  const mine = rows.filter((r) => r.country === source && Number(r[codeCol]) === focus);
+  const years = MX.yearsOf(mine);
+  const sel = MX.selYear(years);
+  const named = new Map(names.filter((n) => n.scheme === 'nace' && n.level === 1).map((n) => [n.code, n]));
+  const items = mine
+    .filter((r) => r.year === sel)
+    .map((r) => ({
+      key: r.code,
+      label: (named.get(r.code) || {}).short || r.code,
+      name: (named.get(r.code) || {}).name || r.code,
+      v: r[shareCol] == null ? null : Number(r[shareCol]),
+      n: r.n_ai_firms,
+    }))
+    .sort((a, b) => (b.v ?? -1) - (a.v ?? -1) || a.key.localeCompare(b.key));
+  const ref = mix.find((r) => r.kind === kind && r.code === focus && r.country === country && r.year === sel);
+  const cat = cats.find((c) => c.code === focus);
+  MX.bars(el, {
+    items,
+    max: Math.max(d3.max(mine, (r) => r[shareCol]) || 0, ref && ref.share != null ? ref.share : 0) || 0.01,
+    ref: ref && ref.share != null ? ref.share : null,
+    refLabel: 'All industries',
+    color: MX.accent(),
+    label: 'Bar chart of the highlighted category’s share of AI-active firms in each industry',
+    naText: 'fewer than ' + MX.fmtInt(MX.MIN_FIRMS) + ' AI-active firms',
+    tip: (d) => ({
+      title: d.name + ' (' + d.key + ')',
+      rows: [
+        {color: MX.accent(), shape: 'box', name: (cat ? cat.short : '') + ', ' + sel, value: d.v == null ? 'withheld' : MX.fmtPct(d.v), strong: true},
+        {name: 'AI-active firms', value: MX.fmtInt(d.n)},
+      ],
+    }),
+  });
+});
