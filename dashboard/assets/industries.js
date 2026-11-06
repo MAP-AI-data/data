@@ -1,4 +1,4 @@
-// Industries: the first year against the selected one, and every industry by country.
+// Industries: the first year against the selected one, and every industry by country, for the picked countries.
 const MX = window.MX;
 const root = document.getElementById('dash-root') || document;
 
@@ -9,6 +9,37 @@ const level = () => LEVELS[MX.param('ind')] || LEVELS.nace1;
 const atLevel = (rows) => {
   const [cls, lvl] = level();
   return rows.filter((r) => r.classification === cls && r.digit_level === lvl);
+};
+
+// One country, or all four (the tables' Pooled rows), reads a column of industry_wide; two or three countries
+// read the industry_pooled calculation.
+const isGroup = () => MX.selected().length > 1 && !MX.isAll();
+const load = () => (isGroup() ? MX.get('industry_wide', 'industry_pooled') : MX.get('industry_wide'));
+const pooledCache = new WeakMap();
+const pooledOf = (rows) => {
+  if (!rows || !isGroup()) return null;
+  const group = MX.groupKey();
+  if (!pooledCache.has(rows)) pooledCache.set(rows, new Map());
+  const byGroup = pooledCache.get(rows);
+  if (!byGroup.has(group)) {
+    byGroup.set(group, new Map(rows.filter((r) => r.group === group).map((r) => [r.id.slice(0, -(group.length + 1)), r])));
+  }
+  return byGroup.get(group);
+};
+// The selection's share and classified firms in a row of industry_wide.
+const valueOf = (r, pooled) => {
+  if (pooled) {
+    const p = pooled.get(r.id);
+    return p ? {v: p.share, n: p.n_firms} : {v: null, n: null};
+  }
+  const col = MX.COL[MX.groupKey()];
+  return {v: r[col], n: r['n_' + col]};
+};
+// Classified firms in the picked countries.
+const firmsOf = (r) => {
+  if (MX.isAll()) return r.n_firms;
+  const parts = MX.selected().map((c) => r['n_' + MX.COL[c]]).filter((n) => n != null);
+  return parts.length ? d3.sum(parts) : null;
 };
 
 let showAll = false;
@@ -24,49 +55,74 @@ for (const b of root.querySelectorAll('.mx-more')) {
 }
 
 dash.draw('dumbbell-ind', (el) => {
-  const st = MX.get('industry_wide');
+  const st = load();
   if (!MX.chartState(el, st)) return;
   const rows = atLevel(st.data[0]);
-  const country = MX.param('country');
-  const col = MX.COL[country] || 'all_four';
+  const pooled = pooledOf(st.data[1]);
   const years = MX.yearsOf(rows);
   const sel = MX.selYear(years);
   const first = years[0];
+  const color = MX.groupColor();
+  const none = {v: null, n: null};
   let items = Array.from(d3.group(rows, (r) => r.code), ([code, list]) => {
     const a = list.find((r) => r.year === first);
     const b = list.find((r) => r.year === sel);
     const ref = b || a || list[0];
-    return {
-      key: code,
-      label: ref.short,
-      name: ref.name,
-      v0: a ? a[col] : null,
-      v1: b ? b[col] : null,
-      n: b ? b['n_' + col] : null,
-      color: MX.colorOf(country),
-    };
+    const va = a ? valueOf(a, pooled) : none;
+    const vb = b ? valueOf(b, pooled) : none;
+    return {key: code, label: MX.L(ref, 'short'), name: MX.L(ref, 'name'), v0: va.v, v1: vb.v, n: vb.n, color};
   });
   items.sort((p, q) => (q.v1 ?? -1) - (p.v1 ?? -1) || String(p.key).localeCompare(String(q.key)));
   if (level()[0] === 'nace' && level()[1] === 2 && !showAll) items = items.slice(0, TOP_DIVISIONS);
   MX.dumbbell(el, {
     items,
-    max: d3.max(rows, (r) => r[col]),
-    label: 'Dot plot of the AI-active share of each industry in the first and the selected year',
-    naText: 'fewer than ' + MX.fmtInt(MX.MIN_FIRMS) + ' firms',
+    max: d3.max(rows, (r) => valueOf(r, pooled).v),
+    label: MX.t('ariaDumbbell'),
+    naText: MX.t('fewerFirms', MX.fmtInt(MX.MIN_FIRMS)),
     tip: (d) => {
       const tipRows = [
-        {color: d.color, shape: 'dot', name: 'AI-active, ' + sel, value: d.v1 == null ? 'withheld' : MX.fmtPct(d.v1), strong: true},
-        {name: 'AI-active, ' + first, value: d.v0 == null ? 'withheld' : MX.fmtPct(d.v0)},
+        {color: d.color, shape: 'dot', name: MX.t('aiActiveIn', sel), value: d.v1 == null ? MX.t('withheld') : MX.fmtPct(d.v1), strong: true},
+        {name: MX.t('aiActiveIn', first), value: d.v0 == null ? MX.t('withheld') : MX.fmtPct(d.v0)},
       ];
-      if (d.v0 != null && d.v1 != null && sel !== first) tipRows.push({name: 'pp change', value: MX.fmtPP((d.v1 - d.v0) * 100)});
-      if (d.n != null) tipRows.push({name: 'classified firms', value: MX.fmtInt(d.n)});
+      if (d.v0 != null && d.v1 != null && sel !== first) tipRows.push({name: MX.t('ppChange'), value: MX.fmtPP((d.v1 - d.v0) * 100)});
+      if (d.n != null) tipRows.push({name: MX.t('classified'), value: MX.fmtInt(d.n)});
       return {title: d.name + ' (' + d.key + ')', rows: tipRows};
     },
   });
 });
 
-// Every industry by country, as a heat table.
+// ---------------------------------------------------------------- every industry by country, as a heat table
+
+// The columns on show: All four when every country is picked, the group's share when two or three are, then
+// each picked country, then classified firms (all four's own column, or the picked countries' sum).
+const visibleKeys = () => {
+  const keys = ['code', 'name', ...MX.selected().map((c) => MX.COL[c])];
+  if (MX.isAll()) keys.push('all_four', 'n_firms');
+  else keys.push('n_sel');
+  if (isGroup()) keys.push('group');
+  return keys;
+};
+const defaultSort = () => ({key: MX.isAll() ? 'all_four' : isGroup() ? 'group' : MX.COL[MX.selected()[0]], dir: -1});
 let indSort = null;
+const currentSort = () => {
+  if (!indSort) return defaultSort();
+  const key = indSort.key === 'n_firms' || indSort.key === 'n_sel' ? (MX.isAll() ? 'n_firms' : 'n_sel') : indSort.key;
+  return visibleKeys().includes(key) ? {key, dir: indSort.dir} : defaultSort();
+};
+const sortValue = (r, key, pooled) => {
+  if (key === 'group') return valueOf(r, pooled).v;
+  if (key === 'n_sel') return firmsOf(r);
+  if (key === 'name') return MX.L(r, 'name');
+  return r[key];
+};
+const markSort = () => {
+  const cur = currentSort();
+  for (const th of root.querySelectorAll('table[data-sortable="industry"] th')) {
+    const b = th.querySelector('button[data-sort]');
+    if (b) th.setAttribute('aria-sort', b.dataset.sort === cur.key ? (cur.dir > 0 ? 'ascending' : 'descending') : 'none');
+  }
+};
+
 MX.indQuery = '';
 for (const input of root.querySelectorAll('.mx-search[data-for="industry-table"]')) {
   input.addEventListener('input', () => {
@@ -79,11 +135,9 @@ for (const table of root.querySelectorAll('table[data-sortable="industry"]')) {
     const b = event.target.closest('button[data-sort]');
     if (!b) return;
     const key = b.dataset.sort;
-    const current = indSort || {key: MX.COL[MX.param('country')] || 'all_four', dir: -1};
-    indSort = {key, dir: current.key === key ? -current.dir : ['code', 'name'].includes(key) ? 1 : -1};
-    for (const th of table.querySelectorAll('th[data-field]')) {
-      th.setAttribute('aria-sort', th.dataset.field === key ? (indSort.dir > 0 ? 'ascending' : 'descending') : 'none');
-    }
+    const cur = currentSort();
+    indSort = {key, dir: cur.key === key ? -cur.dir : ['code', 'name'].includes(key) ? 1 : -1};
+    markSort();
     dash.draw('industry-table');
   });
 }
@@ -94,36 +148,51 @@ const capOf = (rows) => {
 };
 
 dash.draw('industry-table', (el) => {
-  const st = MX.get('industry_wide');
+  const st = load();
   if (st.status !== 'ok') {
     el.replaceChildren();
     return;
   }
   const rows = atLevel(st.data[0]);
+  const pooled = pooledOf(st.data[1]);
   const sel = MX.selYear(MX.yearsOf(rows));
   const cap = capOf(rows);
   const pal = MX.palette(el);
   const q = MX.indQuery.trim().toLowerCase();
-  const shown = rows.filter((r) => r.year === sel && (!q || [r.code, r.name, r.short].some((s) => String(s).toLowerCase().includes(q))));
-  shown.sort(MX.sorter(indSort || {key: MX.COL[MX.param('country')] || 'all_four', dir: -1}));
+  const shown = rows.filter(
+    (r) => r.year === sel && (!q || [r.code, r.name, r.short, MX.L(r, 'name'), MX.L(r, 'short')].some((s) => String(s).toLowerCase().includes(q))),
+  );
+  const {key, dir} = currentSort();
+  shown.sort((a, b) => {
+    const va = sortValue(a, key, pooled);
+    const vb = sortValue(b, key, pooled);
+    if (va == null && vb == null) return 0;
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    return (typeof va === 'number' && typeof vb === 'number' ? va - vb : String(va).localeCompare(String(vb))) * dir;
+  });
+  const heat = (v) => {
+    const td = document.createElement('td');
+    td.className = 'num mx-heat';
+    if (v == null) td.classList.add('mx-na');
+    else {
+      td.style.background = pal.fill(v / cap);
+      td.style.color = pal.ink(v / cap);
+      td.textContent = MX.fmtPct(v);
+    }
+    return td;
+  };
+  const picked = MX.selected();
   el.replaceChildren(
     ...shown.map((r) => {
       const tr = document.createElement('tr');
       tr.dataset.key = r.id;
-      tr.append(MX.cell(r.code, 'mx-code mx-hide-narrow'), MX.cell(r.name, 'mx-name'));
-      for (const c of COLS) {
-        const td = document.createElement('td');
-        td.className = 'num mx-heat';
-        const v = r[c];
-        if (v == null) td.classList.add('mx-na');
-        else {
-          td.style.background = pal.fill(v / cap);
-          td.style.color = pal.ink(v / cap);
-          td.textContent = MX.fmtPct(v);
-        }
-        tr.append(td);
-      }
-      tr.append(MX.cell(r.n_firms == null ? '' : MX.fmtInt(r.n_firms), 'num mx-hide-narrow'));
+      tr.append(MX.cell(r.code, 'mx-code mx-hide-narrow'), MX.cell(MX.L(r, 'name'), 'mx-name'));
+      if (MX.isAll()) tr.append(heat(r.all_four));
+      if (pooled) tr.append(heat(valueOf(r, pooled).v));
+      for (const c of picked) tr.append(heat(r[MX.COL[c]]));
+      const n = firmsOf(r);
+      tr.append(MX.cell(n == null ? '' : MX.fmtInt(n), 'num mx-hide-narrow'));
       return tr;
     }),
   );
@@ -138,20 +207,19 @@ dash.draw('ind-scale', (el) => {
   const cap = capOf(atLevel(st.data[0]));
   const pal = MX.palette(el);
   const lo = document.createElement('span');
-  lo.textContent = d3.format('.0%')(0);
+  lo.textContent = MX.loc().locale.format('.0%')(0);
   const bar = document.createElement('span');
   bar.className = 'mx-scale-bar';
   bar.style.background = `linear-gradient(90deg, ${[0, 0.25, 0.5, 0.75, 1].map((t) => pal.fill(t)).join(', ')})`;
   const hi = document.createElement('span');
-  hi.textContent = MX.fmtPct(cap) + ' or more';
+  hi.textContent = MX.t('orMore', MX.fmtPct(cap));
   el.replaceChildren(lo, bar, hi);
 });
 
-// Until a header is clicked, the table sorts by the chosen country's column.
+// The table's group and classified-firms headers follow the selection, and so does the sort mark.
 dash.onData(() => {
-  if (indSort) return;
-  const key = MX.COL[MX.param('country')] || 'all_four';
-  for (const th of root.querySelectorAll('table[data-sortable="industry"] th[data-field]')) {
-    th.setAttribute('aria-sort', th.dataset.field === key ? 'descending' : 'none');
-  }
+  for (const th of root.querySelectorAll('table[data-sortable="industry"] th[data-col="group"]')) th.hidden = !isGroup();
+  for (const th of root.querySelectorAll('table[data-sortable="industry"] th[data-field="n_firms"]')) th.hidden = !MX.isAll();
+  for (const th of root.querySelectorAll('table[data-sortable="industry"] th[data-col="n_sel"]')) th.hidden = MX.isAll();
+  markSort();
 });
