@@ -1,32 +1,157 @@
-// MAP-AI dashboard: shared helpers, filters, calculations and chart builders.
+// MAP-AI Explorer: shared helpers, languages, filters, calculations and chart builders.
 const MX = (window.MX = window.MX || {});
 const root = document.getElementById('dash-root') || document;
 
 MX.ALL = 'All four countries';
 MX.COUNTRIES = ['Belgium', 'France', 'Germany', 'Luxembourg'];
+MX.CODE = {Belgium: 'BE', France: 'FR', Germany: 'DE', Luxembourg: 'LU'};
 MX.COL = {'All four countries': 'all_four', Belgium: 'belgium', France: 'france', Germany: 'germany', Luxembourg: 'luxembourg'};
 MX.MIN_FIRMS = 30; // README: a share is withheld when its denominator has fewer than 30 firms
 MX.dur = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 650;
 MX.colorOf = (country) => (MX.COUNTRIES.includes(country) ? dash.colors[MX.COUNTRIES.indexOf(country)] : 'var(--color-fg)');
 MX.accent = () => dash.colors[4];
 
-MX.fmtPct = d3.format('.1%');
-MX.fmtInt = d3.format(',');
-MX.fmtPP = d3.format('+.1f');
-MX.fmtSignedInt = d3.format('+,');
-MX.fmtRel = d3.format('+.1%');
-MX.fmtMult = (v) => d3.format(v >= 10 ? '.0f' : '.1f')(v);
-MX.fmtCompact = (v) => new Intl.NumberFormat('en', {notation: 'compact', maximumFractionDigits: 1}).format(v);
+// ---------------------------------------------------------------- languages
+
+MX.LANGS = ['en', 'de', 'fr'];
+MX.lang = () => (MX.LANGS.includes(dash.params().lang) ? dash.params().lang : 'en');
+// Words the scripts write, in English, German and French. {0}, {1} take values.
+const STR = {
+  failed: ['Failed to load', 'Laden fehlgeschlagen', 'Échec du chargement'],
+  vs: ['vs {0}', 'ggü. {0}', 'vs {0}'],
+  firstYear: ['first year', 'erstes Jahr', 'première année'],
+  allFour: ['All four countries', 'Alle vier Länder', 'Les quatre pays'],
+  allFourShort: ['All four', 'Alle vier', 'Les quatre'],
+  selectedShort: ['Selected', 'Auswahl', 'Sélection'],
+  total: ['total', 'insgesamt', 'total'],
+  aiActiveIn: ['AI-active, {0}', 'KI-aktiv, {0}', 'actives en IA, {0}'],
+  classified: ['classified firms', 'klassifizierte Unternehmen', 'entreprises classées'],
+  aiFirmsEst: ['AI-active firms (estimated)', 'KI-aktive Unternehmen (geschätzt)', 'entreprises actives en IA (estimation)'],
+  aiFirms: ['AI-active firms', 'KI-aktive Unternehmen', 'entreprises actives en IA'],
+  ppSince: ['pp since {0}', 'Pp. seit {0}', 'pt depuis {0}'],
+  ppChange: ['pp change', 'Veränderung in Pp.', 'variation en points'],
+  withheld: ['withheld', 'nicht ausgewiesen', 'non communiqué'],
+  fewerFirms: ['fewer than {0} firms', 'weniger als {0} Unternehmen', 'moins de {0} entreprises'],
+  fewerAiFirms: ['fewer than {0} AI-active firms', 'weniger als {0} KI-aktive Unternehmen', 'moins de {0} entreprises actives en IA'],
+  orMore: ['{0} or more', '{0} oder mehr', '{0} ou plus'],
+  notInTables: ['not in the tables', 'nicht in den Tabellen', 'absent des tableaux'],
+  median: ['median {0} · {1} regions', 'Median {0} · {1} Regionen', 'médiane {0} · {1} régions'],
+  allIndustries: ['All industries', 'Alle Branchen', 'Tous les secteurs'],
+  ofAiFirmsYear: ['of AI-active firms, {0}', 'der KI-aktiven Unternehmen, {0}', 'des entreprises actives en IA, {0}'],
+  allAbbr: ['All', 'Alle', 'Tous'],
+  selAbbr: ['Sel.', 'Ausw.', 'Sél.'],
+  searchRegions: ['Search regions', 'Regionen suchen', 'Rechercher une région'],
+  searchIndustries: ['Search industries', 'Branchen suchen', 'Rechercher un secteur'],
+  ariaTrend: ['Line chart of the share of classified firms that are AI-active, by country and year', 'Liniendiagramm: Anteil KI-aktiver Unternehmen nach Land und Jahr', 'Graphique linéaire : part des entreprises actives en IA par pays et par année'],
+  ariaCounts: ['Stacked bar chart of AI-active firms by country and year', 'Gestapeltes Balkendiagramm: KI-aktive Unternehmen nach Land und Jahr', 'Histogramme empilé : entreprises actives en IA par pays et par année'],
+  ariaSwarm: ['Dot chart of regions by AI-active share, one row per country', 'Punktdiagramm der Regionen nach KI-Anteil, eine Zeile je Land', 'Nuage de points des régions selon leur part active en IA, une ligne par pays'],
+  ariaMap: ['Map of the share of firms that are AI-active in each NUTS {0} region, {1}', 'Karte: Anteil KI-aktiver Unternehmen je NUTS-{0}-Region, {1}', 'Carte : part des entreprises actives en IA par région NUTS {0}, {1}'],
+  ariaHeat: ['Heat map of where AI-active firms concentrate, {0}', 'Heatmap: Schwerpunkte KI-aktiver Unternehmen, {0}', 'Carte de chaleur : concentration des entreprises actives en IA, {0}'],
+  ariaDumbbell: ['Dot plot of the AI-active share of each industry in the first and the selected year', 'Punktdiagramm: KI-Anteil jeder Branche im ersten und im gewählten Jahr', 'Diagramme à points : part active en IA de chaque secteur la première année et l’année choisie'],
+  ariaMixTrend: ['Line chart of the share of AI-active firms in each category, by year', 'Liniendiagramm: Anteil der KI-aktiven Unternehmen je Kategorie und Jahr', 'Graphique linéaire : part des entreprises actives en IA par catégorie et par année'],
+  ariaMixDumbbell: ['Dot plot of each category’s share of AI-active firms in the first and the selected year', 'Punktdiagramm: Anteil je Kategorie im ersten und im gewählten Jahr', 'Diagramme à points : part de chaque catégorie la première année et l’année choisie'],
+  ariaMixHeat: ['Heat map of each category’s share of AI-active firms by country', 'Heatmap: Anteil je Kategorie nach Land', 'Carte de chaleur : part de chaque catégorie par pays'],
+  ariaBars: ['Bar chart of the highlighted category’s share of AI-active firms in each industry', 'Balkendiagramm: Anteil der hervorgehobenen Kategorie je Branche', 'Diagramme en barres : part de la catégorie mise en avant par secteur'],
+};
+MX.t = (key, ...args) => {
+  const row = STR[key];
+  let s = row ? row[MX.LANGS.indexOf(MX.lang())] || row[0] : key;
+  args.forEach((a, i) => {
+    s = s.split('{' + i + '}').join(String(a));
+  });
+  return s;
+};
+// A field in the reader's language where the data has one (short_de, label_fr, ...), else the English one.
+MX.L = (row, field) => (MX.lang() !== 'en' && row[field + '_' + MX.lang()]) || row[field];
+const CNAME = {
+  Belgium: ['Belgium', 'Belgien', 'Belgique'],
+  France: ['France', 'Frankreich', 'France'],
+  Germany: ['Germany', 'Deutschland', 'Allemagne'],
+  Luxembourg: ['Luxembourg', 'Luxemburg', 'Luxembourg'],
+  'All four countries': ['All four countries', 'Alle vier Länder', 'Les quatre pays'],
+};
+MX.cname = (c) => (CNAME[c] ? CNAME[c][MX.LANGS.indexOf(MX.lang())] : String(c).split(' + ').map((x) => (CNAME[x] ? MX.cname(x) : x)).join(' + '));
+
+// ---------------------------------------------------------------- number formats
+
+const LOCALES = {
+  en: {decimal: '.', thousands: ',', grouping: [3], currency: ['€', ''], percent: '%', minus: '−'},
+  de: {decimal: ',', thousands: '.', grouping: [3], currency: ['', ' €'], percent: ' %', minus: '−'},
+  fr: {decimal: ',', thousands: ' ', grouping: [3], currency: ['', ' €'], percent: ' %', minus: '−'},
+};
+const TAGS = {en: 'en-GB', de: 'de-DE', fr: 'fr-FR'};
+const formats = {};
+MX.loc = () => {
+  const l = MX.lang();
+  if (!formats[l]) {
+    const locale = d3.formatLocale(LOCALES[l]);
+    formats[l] = {
+      locale,
+      pct: locale.format('.1%'),
+      int: locale.format(','),
+      pp: locale.format('+.1f'),
+      sint: locale.format('+,'),
+      rel: locale.format('+.1%'),
+      m0: locale.format('.0f'),
+      m1: locale.format('.1f'),
+      compact: new Intl.NumberFormat(TAGS[l], {notation: 'compact', maximumFractionDigits: 1}),
+      list: new Intl.ListFormat(TAGS[l], {type: 'conjunction'}),
+    };
+  }
+  return formats[l];
+};
+MX.fmtPct = (v) => MX.loc().pct(v);
+MX.fmtInt = (v) => MX.loc().int(v);
+MX.fmtPP = (v) => MX.loc().pp(v);
+MX.fmtSignedInt = (v) => MX.loc().sint(v);
+MX.fmtRel = (v) => MX.loc().rel(v);
+MX.fmtMult = (v) => (v >= 10 ? MX.loc().m0 : MX.loc().m1)(v);
+MX.fmtCompact = (v) => MX.loc().compact.format(v);
+// Axis ticks in the reader's language, with as many decimals as the tick step needs.
+MX.tickFormat = (scale, count, type) => {
+  const [a, b] = scale.domain();
+  const spec = d3.formatSpecifier(type || ',');
+  if (spec.type === '%') spec.precision = Math.max(0, d3.precisionFixed(d3.tickStep(a, b, count)) - 2);
+  return MX.loc().locale.format(String(spec));
+};
+
+// ---------------------------------------------------------------- countries
+
+// The countries the reader picked (all four unless they chose fewer), in a fixed order.
+MX.selected = () => {
+  const codes = String(dash.params().countries || '').split(/[\s,]+/);
+  const picked = MX.COUNTRIES.filter((c) => codes.includes(MX.CODE[c]));
+  return picked.length ? picked : [...MX.COUNTRIES];
+};
+MX.isAll = () => MX.selected().length === MX.COUNTRIES.length;
+// The rows that hold the selection's figures: one country's own, or the group's ("Belgium + France", "All four countries").
+MX.groupKey = () => {
+  const sel = MX.selected();
+  return sel.length === 1 ? sel[0] : sel.length === MX.COUNTRIES.length ? MX.ALL : sel.join(' + ');
+};
+// The selection's name: "Belgium", "Belgium + France" or "All four countries"; short: "Selected", "All four".
+MX.groupName = (short) => {
+  const sel = MX.selected();
+  if (sel.length === 1) return MX.cname(sel[0]);
+  if (MX.isAll()) return MX.t(short ? 'allFourShort' : 'allFour');
+  return short ? MX.t('selectedShort') : MX.cname(MX.groupKey());
+};
+MX.groupColor = () => (MX.selected().length === 1 ? MX.colorOf(MX.selected()[0]) : 'var(--color-fg)');
 
 // ---------------------------------------------------------------- calculations
 
 dash.calc('adoption_by_country', {
   title: 'AI adoption by country',
   description:
-    'Each country’s published AI-active share, plus All four countries: AI-active firms summed over the four countries, divided by classified firms summed. Changes compare each year with the year before (percentage points for shares) and with the first year.',
+    'Each country’s published AI-active share, plus every group of two or more countries (all four together are “All four countries”): AI-active firms summed over the group, divided by classified firms summed. Changes compare each year with the year before (percentage points for shares) and with the first year.',
   inputs: ['country_adoption', 'country_roles'],
   fn: (country_adoption, country_roles) => {
-    const ALL = 'All four countries';
+    const NAMES = ['Belgium', 'France', 'Germany', 'Luxembourg'];
+    const groups = [];
+    for (let mask = 1; mask < 1 << NAMES.length; mask += 1) {
+      const members = NAMES.filter((_, i) => mask & (1 << i));
+      if (members.length > 1) groups.push({label: members.length === NAMES.length ? 'All four countries' : members.join(' + '), members});
+    }
     const aiFirms = {};
     for (const r of country_roles) aiFirms[r.country + '|' + r.year] = Number(r.n_ai_firms);
     const rows = country_adoption.map((r) => ({
@@ -36,13 +161,16 @@ dash.calc('adoption_by_country', {
       n_ai: aiFirms[r.country + '|' + r.year],
       n_firms: Number(r.n_firms),
     }));
-    const pooled = {};
-    for (const r of rows) {
-      const p = (pooled[r.year] ??= {country: ALL, year: r.year, share: 0, n_ai: 0, n_firms: 0});
-      p.n_ai += r.n_ai;
-      p.n_firms += r.n_firms;
+    const byKey = {};
+    for (const r of rows) byKey[r.country + '|' + r.year] = r;
+    for (const year of new Set(rows.map((r) => r.year))) {
+      for (const g of groups) {
+        const parts = g.members.map((c) => byKey[c + '|' + year]).filter(Boolean);
+        const n_ai = parts.reduce((s, r) => s + r.n_ai, 0);
+        const n_firms = parts.reduce((s, r) => s + r.n_firms, 0);
+        rows.push({country: g.label, year, share: n_ai / n_firms, n_ai, n_firms});
+      }
     }
-    for (const p of Object.values(pooled)) rows.push({...p, share: p.n_ai / p.n_firms});
     const series = {};
     for (const r of rows) (series[r.country] ??= []).push(r);
     for (const list of Object.values(series)) {
@@ -62,30 +190,57 @@ dash.calc('adoption_by_country', {
 dash.calc('mix_by_country', {
   title: 'Technology types and roles by country',
   description:
-    'Share of AI-active firms in each technology type and ecosystem role. Countries use the published shares. All four countries recovers each category’s firm count (share of all firms × classified firms, rounded), sums it over the four countries and divides by AI-active firms summed. Changes are in percentage points on the year before.',
+    'Share of AI-active firms in each technology type and ecosystem role. Countries use the published shares. A group of two or more countries recovers each category’s firm count (share of all firms × classified firms, rounded), sums it over the group and divides by AI-active firms summed. Changes are in percentage points on the year before. Labels in English, German and French.',
   inputs: ['country_types', 'country_roles', 'names'],
   fn: (country_types, country_roles, names) => {
-    const ALL = 'All four countries';
-    const short = {};
-    for (const n of names) short[n.scheme + '|' + n.code] = n.short;
+    const NAMES = ['Belgium', 'France', 'Germany', 'Luxembourg'];
+    const groups = [];
+    for (let mask = 1; mask < 1 << NAMES.length; mask += 1) {
+      const members = NAMES.filter((_, i) => mask & (1 << i));
+      if (members.length > 1) groups.push({label: members.length === NAMES.length ? 'All four countries' : members.join(' + '), members});
+    }
+    const named = {};
+    for (const n of names) named[n.scheme + '|' + n.code] = n;
     const rows = [];
-    const pooled = {};
+    const counts = {};
     const add = (list, kind, codeCol, labelCol, aiCol, allCol) => {
       for (const r of list) {
         const code = Number(r[codeCol]);
         const year = Number(r.year);
-        const base = {kind, code, label: r[labelCol], short: short['ai_' + kind + '|' + code] ?? r[labelCol], year};
+        const n = named['ai_' + kind + '|' + code] || {};
+        const base = {
+          kind,
+          code,
+          label: r[labelCol],
+          label_de: n.name_de ?? r[labelCol],
+          label_fr: n.name_fr ?? r[labelCol],
+          short: n.short ?? r[labelCol],
+          short_de: n.short_de ?? n.short ?? r[labelCol],
+          short_fr: n.short_fr ?? n.short ?? r[labelCol],
+          year,
+        };
         rows.push({...base, country: r.country, share: r[aiCol] == null ? null : Number(r[aiCol]), n_ai: Number(r.n_ai_firms)});
-        const p = (pooled[kind + '|' + code + '|' + year] ??= {...base, country: ALL, share: null, n_ai: 0, n_cat: 0});
-        p.n_ai += Number(r.n_ai_firms);
-        p.n_cat += Math.round(Number(r[allCol]) * Number(r.n_firms));
+        counts[kind + '|' + code + '|' + year + '|' + r.country] = {
+          base,
+          n_ai: Number(r.n_ai_firms),
+          n_cat: Math.round(Number(r[allCol]) * Number(r.n_firms)),
+        };
       }
     };
     add(country_types, 'type', 'ai_type', 'ai_type_label', 'type_share_among_ai_firms', 'type_share_among_all_firms');
     add(country_roles, 'role', 'ai_role', 'ai_role_label', 'role_share_among_ai_firms', 'role_share_among_all_firms');
-    for (const p of Object.values(pooled)) {
-      const {n_cat, ...row} = p;
-      rows.push({...row, share: n_cat / p.n_ai});
+    const cells = {};
+    for (const [key, v] of Object.entries(counts)) {
+      const cell = key.slice(0, key.lastIndexOf('|'));
+      (cells[cell] ??= {base: v.base, by: {}}).by[key.slice(key.lastIndexOf('|') + 1)] = v;
+    }
+    for (const {base, by} of Object.values(cells)) {
+      for (const g of groups) {
+        const parts = g.members.map((c) => by[c]).filter(Boolean);
+        const n_ai = parts.reduce((s, p) => s + p.n_ai, 0);
+        const n_cat = parts.reduce((s, p) => s + p.n_cat, 0);
+        rows.push({...base, country: g.label, share: n_ai ? n_cat / n_ai : null, n_ai});
+      }
     }
     const series = {};
     for (const r of rows) (series[r.kind + '|' + r.code + '|' + r.country] ??= []).push(r);
@@ -103,27 +258,40 @@ dash.calc('mix_by_country', {
 dash.calc('region_rows', {
   title: 'Regions with names',
   description:
-    'NUTS 1–3 regions with their names (a region without a name of its own, such as a French outermost region at NUTS 3, takes its NUTS 2 region’s) and the change in AI-active share since the first year, in percentage points.',
+    'NUTS 1–3 regions with their names (a region without a name of its own, such as a French outermost region at NUTS 3, takes its NUTS 2 region’s), the change in AI-active share since the first year in percentage points, and an estimate of AI-active firms: the share × classified firms, rounded.',
   inputs: ['region_adoption', 'names'],
   fn: (region_adoption, names) => {
-    const name = {};
-    for (const n of names) if (n.scheme === 'nuts') name[n.code] = n.short;
+    const named = {};
+    for (const n of names) if (n.scheme === 'nuts') named[n.code] = n;
     const children = {};
     const small = new Set(region_adoption.filter((r) => Number(r.nuts_level) === 3).map((r) => r.nuts_code));
     for (const code of small) children[code.slice(0, 4)] = (children[code.slice(0, 4)] || 0) + 1;
+    const nameOf = (code, lang) => {
+      const n = named[code];
+      return n ? (lang ? n['short_' + lang] : null) ?? n.short : null;
+    };
+    const PART = {en: 'Part of ', de: 'Teil von ', fr: 'Partie de '};
+    const labelOf = (code, level, lang) => {
+      const own = nameOf(code, lang);
+      if (own || level < 3) return own ?? code;
+      const parent = code.slice(0, 4);
+      return children[parent] === 1 ? nameOf(parent, lang) ?? parent : PART[lang || 'en'] + (nameOf(parent, lang) ?? parent);
+    };
     const rows = region_adoption.map((r) => {
       const level = Number(r.nuts_level);
-      const parent = r.nuts_code.slice(0, 4);
-      let label = name[r.nuts_code] ?? r.nuts_code;
-      if (level === 3 && !(r.nuts_code in name)) label = children[parent] === 1 ? (name[parent] ?? parent) : 'Part of ' + (name[parent] ?? parent);
+      const share = r.ai_adoption_share == null ? null : Number(r.ai_adoption_share);
+      const n_firms = Number(r.n_firms);
       return {
         nuts_code: r.nuts_code,
         nuts_level: level,
         country: r.country,
         year: Number(r.year),
-        label,
-        ai_adoption_share: r.ai_adoption_share == null ? null : Number(r.ai_adoption_share),
-        n_firms: Number(r.n_firms),
+        label: labelOf(r.nuts_code, level),
+        label_de: labelOf(r.nuts_code, level, 'de'),
+        label_fr: labelOf(r.nuts_code, level, 'fr'),
+        ai_adoption_share: share,
+        n_firms,
+        n_ai: share == null ? null : Math.round(share * n_firms),
       };
     });
     const first = {};
@@ -139,7 +307,7 @@ dash.calc('region_rows', {
 dash.calc('industry_wide', {
   title: 'Industries by country',
   description:
-    'One row per industry and year: the AI-active share in each country (All four countries is the published Pooled row), each country’s classified firms, and the industry’s name.',
+    'One row per industry and year: the AI-active share in each country (All four countries is the published Pooled row), each country’s classified firms, and the industry’s name in English, German and French.',
   inputs: ['industry_adoption', 'names'],
   fn: (industry_adoption, names) => {
     const COL = {Pooled: 'all_four', Belgium: 'belgium', France: 'france', Germany: 'germany', Luxembourg: 'luxembourg'};
@@ -156,7 +324,11 @@ dash.calc('industry_wide', {
         code: String(r.code),
         year: Number(r.year),
         name: n.name ?? String(r.code),
+        name_de: n.name_de ?? n.name ?? String(r.code),
+        name_fr: n.name_fr ?? n.name ?? String(r.code),
         short: n.short ?? String(r.code),
+        short_de: n.short_de ?? n.short ?? String(r.code),
+        short_fr: n.short_fr ?? n.short ?? String(r.code),
         all_four: null,
         belgium: null,
         france: null,
@@ -179,9 +351,98 @@ dash.calc('industry_wide', {
   },
 });
 
+dash.calc('industry_pooled', {
+  title: 'Industries for groups of countries',
+  description:
+    'AI-active share of each industry for every group of two or three countries: each country’s share weighted by its classified firms, leaving out countries whose share is withheld. All four countries together use the tables’ own Pooled rows instead.',
+  inputs: ['industry_adoption'],
+  fn: (industry_adoption) => {
+    const NAMES = ['Belgium', 'France', 'Germany', 'Luxembourg'];
+    const groups = [];
+    for (let mask = 1; mask < 1 << NAMES.length; mask += 1) {
+      const members = NAMES.filter((_, i) => mask & (1 << i));
+      if (members.length > 1 && members.length < NAMES.length) groups.push({label: members.join(' + '), members});
+    }
+    const cells = {};
+    for (const r of industry_adoption) {
+      if (r.country === 'Pooled') continue;
+      const base = r.classification + '-' + r.digit_level + '-' + r.code + '-' + r.year;
+      (cells[base] ??= {r, by: {}}).by[r.country] = r;
+    }
+    const rows = [];
+    for (const [base, cell] of Object.entries(cells)) {
+      for (const g of groups) {
+        let num = 0;
+        let den = 0;
+        let n = 0;
+        for (const m of g.members) {
+          const r = cell.by[m];
+          if (!r) continue;
+          n += Number(r.n_firms);
+          if (r.ai_adoption_share != null) {
+            num += Number(r.ai_adoption_share) * Number(r.n_firms);
+            den += Number(r.n_firms);
+          }
+        }
+        rows.push({
+          id: base + '-' + g.label,
+          group: g.label,
+          classification: cell.r.classification,
+          digit_level: Number(cell.r.digit_level),
+          code: String(cell.r.code),
+          year: Number(cell.r.year),
+          share: den ? num / den : null,
+          n_firms: n,
+        });
+      }
+    }
+    return rows;
+  },
+});
+
+dash.calc('industry_mix', {
+  title: 'Industry mix for groups of countries',
+  description:
+    'Share of AI-active firms in each technology type and ecosystem role by NACE section, for every group of two or three countries: category firm counts (share of all firms × classified firms, rounded) summed over the group, divided by its AI-active firms; withheld when fewer than 30. Single countries and all four use the published rows.',
+  inputs: ['industry_types', 'industry_roles'],
+  fn: (industry_types, industry_roles) => {
+    const NAMES = ['Belgium', 'France', 'Germany', 'Luxembourg'];
+    const groups = [];
+    for (let mask = 1; mask < 1 << NAMES.length; mask += 1) {
+      const members = NAMES.filter((_, i) => mask & (1 << i));
+      if (members.length > 1 && members.length < NAMES.length) groups.push({label: members.join(' + '), members});
+    }
+    const rows = [];
+    const add = (list, kind, codeCol, allCol) => {
+      const cells = {};
+      for (const r of list) {
+        if (r.country === 'Pooled') continue;
+        const key = r.code + '|' + r.year + '|' + r[codeCol];
+        (cells[key] ??= {section: String(r.code), year: Number(r.year), category: Number(r[codeCol]), by: {}}).by[r.country] = r;
+      }
+      for (const cell of Object.values(cells)) {
+        for (const g of groups) {
+          let cat = 0;
+          let ai = 0;
+          for (const m of g.members) {
+            const r = cell.by[m];
+            if (!r || r[allCol] == null) continue;
+            cat += Math.round(Number(r[allCol]) * Number(r.n_firms));
+            ai += Number(r.n_ai_firms);
+          }
+          rows.push({kind, group: g.label, section: cell.section, year: cell.year, category: cell.category, share: ai >= 30 ? cat / ai : null, n_ai: ai});
+        }
+      }
+    };
+    add(industry_types, 'type', 'ai_type', 'type_share_among_all_firms');
+    add(industry_roles, 'role', 'ai_role', 'role_share_among_all_firms');
+    return rows;
+  },
+});
+
 // ---------------------------------------------------------------- filters
 
-const DEFAULTS = {level: '3', ind: 'nace1', country: MX.ALL, bd: 'type'};
+const DEFAULTS = {level: '3', ind: 'nace1', bd: 'type', lang: 'en', mapmode: 'share'};
 MX.param = (name) => {
   const v = dash.params()[name];
   return v === null || v === undefined || v === '' ? DEFAULTS[name] : String(v);
@@ -207,6 +468,7 @@ MX.get = (...ids) => {
   return {status: 'ok', data: res.map((r) => (Array.isArray(r.data) ? r.data : []))};
 };
 MX.chartState = (el, st) => {
+  el.setAttribute('lang', MX.lang());
   if (st.status === 'ok') {
     el.classList.remove('dash-skeleton');
     for (const n of el.querySelectorAll(':scope > .mx-failed')) n.remove();
@@ -217,7 +479,7 @@ MX.chartState = (el, st) => {
   if (st.status === 'error') {
     const p = document.createElement('p');
     p.className = 'mx-failed';
-    p.textContent = 'Failed to load';
+    p.textContent = MX.t('failed');
     el.append(p);
   }
   return false;
@@ -263,6 +525,18 @@ MX.textWidths = (svg, strings, cls) => {
   return widths;
 };
 MX.textWidth = (svg, strings, cls) => Math.ceil(Math.max(0, ...MX.textWidths(svg, strings, cls)));
+// Percent ticks along a horizontal axis, fewer of them when their labels would touch.
+MX.xTicks = (svg, x, count) => {
+  const [a, b] = x.range();
+  let n = count;
+  for (;;) {
+    const ticks = x.ticks(n);
+    const fmt = MX.tickFormat(x, n, '%');
+    const room = Math.abs(b - a) / Math.max(1, ticks.length - 1);
+    if (n <= 1 || room >= MX.textWidth(svg, ticks.map(fmt), 'mx-tick') + 10) return {ticks, fmt};
+    n -= 1;
+  }
+};
 MX.fit = (node, maxW) => {
   const full = node.textContent;
   let n = full.length;
@@ -315,11 +589,11 @@ MX.palette = (el) => {
   probe.remove();
   if (!d3.color(panel) || !d3.color(hue)) {
     const mix = (t) => `color-mix(in oklab, ${dash.colors[0]} ${Math.round(10 + 90 * Math.max(0, Math.min(1, t)))}%, var(--color-panel))`;
-    return {fill: mix, ink: () => 'var(--color-fg)'};
+    return {fill: mix, ink: () => 'var(--color-fg)', dark: false};
   }
   const ramp = d3.interpolateLab(panel, hue);
   const fill = (t) => ramp(0.1 + 0.9 * Math.max(0, Math.min(1, t)));
-  return {fill, ink: (t) => (MX.lum(d3.rgb(fill(t))) > 0.19 ? '#161616' : '#f7f7f7')};
+  return {fill, ink: (t) => (MX.lum(d3.rgb(fill(t))) > 0.19 ? '#161616' : '#f7f7f7'), dark: MX.lum(d3.rgb(panel)) < 0.2};
 };
 
 MX.tip = (el) => {
@@ -453,7 +727,7 @@ MX.lineChart = (el, o) => {
   const nY = narrow ? 4 : 5;
   const y = d3.scaleLinear([0, top * 1.04], [1, 0]).nice(nY);
   const yTicks = y.ticks(nY);
-  const fy = y.tickFormat(nY, '%');
+  const fy = MX.tickFormat(y, nY, '%');
   const tickW = MX.textWidth(svg, yTicks.map(fy), 'mx-tick');
   const ends = series.map((s) => ({s, text: o.endLabel(s, narrow)})).filter((e) => e.text);
   const endW = MX.textWidth(svg, ends.map((e) => e.text), 'mx-endlabel');
@@ -593,11 +867,11 @@ MX.dumbbell = (el, o) => {
   MX.svg(el, W, H, o.label);
   const nX = narrow ? 3 : 5;
   const x = d3.scaleLinear([0, o.max || 0.01], [0, iw]).nice(nX);
-  const fx = x.tickFormat(nX, '%');
+  const {ticks: xTicks, fmt: fx} = MX.xTicks(svg, x, nX);
   const g = MX.layer(svg, 'mx-plot').attr('transform', `translate(${m.left},${m.top})`);
   const axis = MX.layer(g, 'mx-axis');
   axis.selectAll('*').remove();
-  for (const t of x.ticks(nX)) {
+  for (const t of xTicks) {
     axis.append('line').attr('class', t === 0 ? 'mx-baseline' : 'mx-gridline').attr('x1', x(t)).attr('x2', x(t)).attr('y1', -4).attr('y2', ih);
     axis.append('text').attr('class', 'mx-tick').attr('x', x(t)).attr('y', -12).attr('text-anchor', 'middle').text(fx(t));
   }
@@ -710,11 +984,11 @@ MX.bars = (el, o) => {
   MX.svg(el, W, H, o.label);
   const nX = narrow ? 3 : 5;
   const x = d3.scaleLinear([0, o.max || 0.01], [0, iw]).nice(nX);
-  const fx = x.tickFormat(nX, '%');
+  const {ticks: xTicks, fmt: fx} = MX.xTicks(svg, x, nX);
   const g = MX.layer(svg, 'mx-plot').attr('transform', `translate(${m.left},${m.top})`);
   const axis = MX.layer(g, 'mx-axis');
   axis.selectAll('*').remove();
-  for (const t of x.ticks(nX)) {
+  for (const t of xTicks) {
     axis.append('line').attr('class', t === 0 ? 'mx-baseline' : 'mx-gridline').attr('x1', x(t)).attr('x2', x(t)).attr('y1', 0).attr('y2', ih);
     axis.append('text').attr('class', 'mx-tick').attr('x', x(t)).attr('y', ih + 18).attr('text-anchor', 'middle').text(fx(t));
   }
@@ -833,15 +1107,32 @@ if (linkedPage) {
   if (linked !== linkedPage) setTimeout(() => linked.scrollIntoView({block: 'start'}), 700);
 }
 
-// Segmented filters.
+// Segmented filters. The language and map view leave the address clean at their defaults.
 for (const seg of root.querySelectorAll('.mx-seg[data-param]')) {
   seg.addEventListener('click', (event) => {
     const b = event.target.closest('button[data-value]');
     if (!b) return;
     const name = seg.dataset.param;
-    dash.setParams(name === 'bd' ? {bd: b.dataset.value, focus: null} : {[name]: b.dataset.value});
+    const value = (name === 'lang' || name === 'mapmode') && b.dataset.value === DEFAULTS[name] ? null : b.dataset.value;
+    dash.setParams(name === 'bd' ? {bd: value, focus: null} : {[name]: value});
   });
 }
+
+// Countries: each chip adds or removes a country, and at least one stays picked.
+const pickCountries = (picked) =>
+  dash.setParams({countries: picked.length === MX.COUNTRIES.length ? null : picked.map((c) => MX.CODE[c]).join(',')});
+for (const chip of root.querySelectorAll('.mx-cchip[data-country]')) {
+  chip.addEventListener('click', () => {
+    const sel = new Set(MX.selected());
+    const c = chip.dataset.country;
+    if (sel.has(c)) {
+      if (sel.size === 1) return;
+      sel.delete(c);
+    } else sel.add(c);
+    pickCountries(MX.COUNTRIES.filter((x) => sel.has(x)));
+  });
+}
+for (const b of root.querySelectorAll('[data-countries-all]')) b.addEventListener('click', () => pickCountries(MX.COUNTRIES));
 
 // Play steps through the years.
 let timer = null;
@@ -874,16 +1165,32 @@ const play = () => {
 for (const b of root.querySelectorAll('.mx-play')) b.addEventListener('click', () => (timer ? MX.stop() : play()));
 
 dash.onData(() => {
-  const p = {level: MX.param('level'), ind: MX.param('ind'), country: MX.param('country'), bd: MX.param('bd')};
+  const p = {level: MX.param('level'), ind: MX.param('ind'), bd: MX.param('bd'), lang: MX.lang(), mapmode: MX.param('mapmode')};
   for (const seg of root.querySelectorAll('.mx-seg[data-param]')) {
     for (const b of seg.querySelectorAll('button[data-value]')) b.setAttribute('aria-pressed', String(b.dataset.value === p[seg.dataset.param]));
   }
   for (const n of root.querySelectorAll('[data-bd]')) n.hidden = n.dataset.bd !== p.bd;
+  for (const n of root.querySelectorAll('[data-mapmode]')) n.hidden = n.dataset.mapmode !== p.mapmode;
   for (const n of root.querySelectorAll('.mx-more')) n.hidden = p.ind !== 'nace2';
+  // Language: show each text in the reader's language, and label controls in it.
+  for (const n of root.querySelectorAll('[data-l]')) n.hidden = n.dataset.l !== p.lang;
+  const aria = 'aria' + p.lang[0].toUpperCase() + p.lang.slice(1);
+  for (const n of root.querySelectorAll('[data-aria-en]')) n.setAttribute('aria-label', n.dataset[aria] || n.dataset.ariaEn);
+  for (const n of root.querySelectorAll('.mx')) {
+    n.classList.toggle('mx-lang-de', p.lang === 'de');
+    n.classList.toggle('mx-lang-fr', p.lang === 'fr');
+  }
+  // Countries: the chips, the colors that stand for the selection, and the industry table's columns.
+  const sel = MX.selected();
+  for (const chip of root.querySelectorAll('.mx-cchip[data-country]')) chip.setAttribute('aria-pressed', String(sel.includes(chip.dataset.country)));
+  for (const b of root.querySelectorAll('[data-countries-all]')) b.hidden = MX.isAll();
   for (const k of root.querySelectorAll('.mx-key[data-key]')) k.style.background = MX.colorOf(k.dataset.key);
-  for (const k of root.querySelectorAll('.mx-key[data-key-country]')) k.style.background = MX.colorOf(p.country);
+  for (const k of root.querySelectorAll('.mx-key[data-key-group]')) k.style.background = MX.groupColor();
   for (const k of root.querySelectorAll('.mx-key-accent')) k.style.background = MX.accent();
-  for (const th of root.querySelectorAll('table[data-sortable="industry"] th[data-field]')) th.classList.toggle('is-sel', th.dataset.field === MX.COL[p.country]);
+  for (const th of root.querySelectorAll('table[data-sortable="industry"] th[data-field]')) {
+    const country = Object.keys(MX.COL).find((c) => MX.COL[c] === th.dataset.field);
+    if (country) th.hidden = country === MX.ALL ? !MX.isAll() : !sel.includes(country);
+  }
 });
 
 // Redraw what measures text once the fonts are in, and what mixes colors when the theme changes.
@@ -919,12 +1226,20 @@ dash.draw('last-year', (el) => yearsFrom(el, (years) => String(years[years.lengt
 dash.draw('vs-prev', (el) =>
   yearsFrom(el, (years) => {
     const i = years.indexOf(MX.selYear(years));
-    return i > 0 ? 'vs ' + years[i - 1] : 'first year';
+    return i > 0 ? MX.t('vs', years[i - 1]) : MX.t('firstYear');
   }),
 );
 dash.draw('min-firms', (el) => {
   el.textContent = MX.fmtInt(MX.MIN_FIRMS);
 });
+// Search boxes say what they search in the reader's language.
+const placeholder = (name, key) =>
+  dash.draw(name, (el) => {
+    el.placeholder = MX.t(key);
+    el.setAttribute('aria-label', MX.t(key));
+  });
+placeholder('ph-regions', 'searchRegions');
+placeholder('ph-industries', 'searchIndustries');
 dash.draw('years', (el) => {
   const st = MX.get('country_adoption');
   el.classList.toggle('dash-skeleton', st.status === 'loading');
