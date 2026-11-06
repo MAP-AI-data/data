@@ -22,6 +22,10 @@ It has five views:
   NAICS sectors).
 - **Technologies & roles**: the mix of AI-active firms over time, by country and
   by industry, with any category highlighted.
+- **Validation**: MAP-AI against Eurostat's survey of AI use in enterprises, as in
+  Figure A.2 of the paper: each industry's share of firms using AI in both, for any
+  survey year or their average, with the correlation, a table of the industries,
+  and both measures over time.
 - **About the data**: definitions, coverage and how to cite.
 
 A year picker and a **Play** button move every view through the years. Next to
@@ -50,12 +54,13 @@ step and nothing to install.
 |---|---|
 | `index.html` | The page |
 | `assets/lib.js` | Shared helpers, the calculations and the chart builders |
-| `assets/overview.js`, `regions.js`, `industries.js`, `tech.js` | One script per view |
+| `assets/overview.js`, `regions.js`, `industries.js`, `tech.js`, `validation.js` | One script per view |
 | `assets/style.css`, `assets/theme.css` | Layout, and colors and type for light and dark |
 | `assets/dash.js` | A small runtime that loads the data and redraws the charts when data, filters or the page width change |
 | `assets/vendor/d3.min.js` | d3 v7.9.0 (ISC license, in `d3.LICENSE.txt`) |
 | `data/` | The data the page reads (below) |
-| `build_data.py` | Rebuilds the table extracts in `data/` from the tables |
+| `build_data.py` | Rebuilds the table extracts in `data/` from the tables, and the Eurostat extract |
+| `eurostat/` | Eurostat's table of AI use in enterprises, as used in the paper |
 | `build_map.py` | Rebuilds `data/nuts_geo.json`, the map's region outlines |
 
 ## The data
@@ -72,6 +77,7 @@ the table's own columns and values:
 | `industry_adoption.json` | `ai_adoption_share_by_industry_country.csv` | NACE sections and divisions, NAICS 2-digit sectors |
 | `industry_types.json` | `ai_type_share_by_industry_country.csv` | NACE sections |
 | `industry_roles.json` | `ai_role_share_by_industry_country.csv` | NACE sections |
+| `eurostat_ai.json` | `eurostat/isoc_eb_ain2_page_linear_2_0.csv` | NACE sections and the survey's total |
 
 When the tables change, rebuild the extracts and commit them (standard library
 only):
@@ -87,6 +93,18 @@ were written out and checked against them. The industry names were written out
 from the published classifications rather than downloaded, and the German and
 French names were translated for this dashboard, so check them against Eurostat
 and the US Census Bureau before citing them.
+
+## The Eurostat survey
+
+`eurostat/isoc_eb_ain2_page_linear_2_0.csv` is Eurostat's table
+[isoc_eb_ain2](https://ec.europa.eu/eurostat/databrowser/view/isoc_eb_ain2/default/table?lang=en),
+*Artificial intelligence by NACE Rev. 2 activity*, as downloaded for the paper:
+the share of enterprises with 10 or more persons employed that use at least one AI
+technology (`E_AI_TANY`), for Belgium, France, Germany and Luxembourg in the survey
+years 2021, 2023 and 2024. `build_data.py` keeps its NACE sections and the survey's
+total (`C10-S951_X_K`, all activities except agriculture, mining and finance) in
+`eurostat_ai.json`, with Eurostat's columns and flags. Source: Eurostat. Eurostat
+allows reuse with the source acknowledged.
 
 ## The map
 
@@ -131,3 +149,13 @@ repository's CC BY 4.0 license.
   result on a cube-root scale fixed at the latest year's peak.
 - Shares the tables withhold (fewer than 30 firms in the denominator) show as
   hatched cells or missing dots.
+- **Validation** follows the paper's Figure A.2. For each NACE section the survey
+  reports (C to N without K), the survey's share for several countries is the
+  mean of the shares the countries report, as in the paper, and MAP-AI's pools
+  their firms (all four countries: the `Pooled` rows); the average of the survey
+  years needs all three. The correlation is Pearson's, over the sections with both
+  figures. The paper's figure was computed from firm-level data, so a few values
+  differ slightly from these, which come from the published tables (with all four
+  countries and the average, r = 0.940 here and 0.943 in the paper). Over time,
+  MAP-AI's line pools its firms in the same sections, and the survey's rings are
+  its total for all the activities it covers.
