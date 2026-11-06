@@ -14,6 +14,7 @@
   const widths = new WeakMap();
   let params = fromQuery();
   let started = false;
+  const baseLang = document.documentElement.lang || 'en';
   let queued = false;
 
   function fromQuery() {
@@ -99,6 +100,9 @@
   }
   function run() {
     queued = false;
+    // The page's language follows a `lang` filter, when there is one.
+    const lang = String(params.lang || '');
+    document.documentElement.lang = /^[a-z]{2}$/.test(lang) ? lang : baseLang;
     for (const fn of listeners) {
       try {
         fn();
