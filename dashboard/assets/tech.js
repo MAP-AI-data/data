@@ -1,16 +1,15 @@
-// Technologies and roles: the mix of AI-active firms over time, by country and by industry.
+// Technologies and roles: the mix of AI-active firms over time, by country and by industry, for the picked countries.
 const MX = window.MX;
 
-const SHORT_COUNTRY = {'All four countries': 'All', Belgium: 'BE', France: 'FR', Germany: 'DE', Luxembourg: 'LU'};
 const categoriesOf = (rows, kind) => {
   const seen = new Map();
-  for (const r of rows) if (r.kind === kind && !seen.has(r.code)) seen.set(r.code, {code: r.code, short: r.short, label: r.label});
-  return [...seen.values()].sort((a, b) => a.code - b.code);
+  for (const r of rows) if (r.kind === kind && !seen.has(r.code)) seen.set(r.code, r);
+  return [...seen.values()].map((r) => ({code: r.code, short: MX.L(r, 'short'), label: MX.L(r, 'label')})).sort((a, b) => a.code - b.code);
 };
 const context = (rows) => {
   const kind = MX.param('bd');
   const cats = categoriesOf(rows, kind);
-  return {kind, cats, focus: MX.focus(kind, cats.map((c) => c.code)), country: MX.param('country')};
+  return {kind, cats, focus: MX.focus(kind, cats.map((c) => c.code)), group: MX.groupKey()};
 };
 
 dash.draw('focus', (select) => {
@@ -37,8 +36,8 @@ dash.draw('focus-name', (el) => {
 dash.draw('mix-trend', (el) => {
   const st = MX.get('mix_by_country');
   if (!MX.chartState(el, st)) return;
-  const {kind, cats, focus, country} = context(st.data[0]);
-  const rows = st.data[0].filter((r) => r.kind === kind && r.country === country);
+  const {kind, cats, focus, group} = context(st.data[0]);
+  const rows = st.data[0].filter((r) => r.kind === kind && r.country === group);
   const years = MX.yearsOf(rows);
   const series = cats
     .map((c) => ({
@@ -53,7 +52,7 @@ dash.draw('mix-trend', (el) => {
     series,
     years,
     sel: MX.selYear(years),
-    label: 'Line chart of the share of AI-active firms in each category, by year',
+    label: MX.t('ariaMixTrend'),
     value: (d) => d.share,
     endLabel: (s, narrow) => (s.focus ? (narrow ? '' : s.name + '  ') + MX.fmtPct(s.values[s.values.length - 1].share) : null),
     widthOf: (s) => (s.focus ? 2.75 : 1.5),
@@ -67,8 +66,8 @@ dash.draw('mix-trend', (el) => {
 dash.draw('mix-dumbbell', (el) => {
   const st = MX.get('mix_by_country');
   if (!MX.chartState(el, st)) return;
-  const {kind, cats, focus, country} = context(st.data[0]);
-  const rows = st.data[0].filter((r) => r.kind === kind && r.country === country);
+  const {kind, cats, focus, group} = context(st.data[0]);
+  const rows = st.data[0].filter((r) => r.kind === kind && r.country === group);
   const years = MX.yearsOf(rows);
   const sel = MX.selYear(years);
   const first = years[0];
@@ -91,25 +90,26 @@ dash.draw('mix-dumbbell', (el) => {
     items,
     max: d3.max(rows, (r) => r.share),
     rowH: 28,
-    label: 'Dot plot of each category’s share of AI-active firms in the first and the selected year',
-    naText: 'withheld',
+    label: MX.t('ariaMixDumbbell'),
+    naText: MX.t('withheld'),
     onClick: (d) => dash.setParams({focus: d.key}),
     tip: (d) => {
       const tipRows = [
-        {color: d.color, shape: 'dot', name: 'of AI-active firms, ' + sel, value: d.v1 == null ? 'withheld' : MX.fmtPct(d.v1), strong: true},
-        {name: 'of AI-active firms, ' + first, value: d.v0 == null ? 'withheld' : MX.fmtPct(d.v0)},
+        {color: d.color, shape: 'dot', name: MX.t('ofAiFirmsYear', sel), value: d.v1 == null ? MX.t('withheld') : MX.fmtPct(d.v1), strong: true},
+        {name: MX.t('ofAiFirmsYear', first), value: d.v0 == null ? MX.t('withheld') : MX.fmtPct(d.v0)},
       ];
-      if (d.v0 != null && d.v1 != null && sel !== first) tipRows.push({name: 'pp change', value: MX.fmtPP((d.v1 - d.v0) * 100)});
+      if (d.v0 != null && d.v1 != null && sel !== first) tipRows.push({name: MX.t('ppChange'), value: MX.fmtPP((d.v1 - d.v0) * 100)});
       return {title: d.name, rows: tipRows};
     },
   });
 });
 
-// Categories against countries for the selected year.
+// Categories against the picked countries (and the picked group together) for the selected year.
 dash.draw('mix-heat', (el) => {
   const st = MX.get('mix_by_country');
   if (!MX.chartState(el, st)) return;
-  const {kind, cats, focus, country} = context(st.data[0]);
+  const {kind, cats, focus, group} = context(st.data[0]);
+  const picked = MX.selected();
   const rows = st.data[0].filter((r) => r.kind === kind);
   const sel = MX.selYear(MX.yearsOf(rows));
   const now = rows.filter((r) => r.year === sel);
@@ -117,18 +117,20 @@ dash.draw('mix-heat', (el) => {
     const r = now.find((x) => x.code === code && x.country === c);
     return r && r.share != null ? r : null;
   };
-  const cols = [MX.ALL, ...MX.COUNTRIES];
-  const order = [...cats].sort((a, b) => ((value(b.code, MX.ALL) || {}).share ?? -1) - ((value(a.code, MX.ALL) || {}).share ?? -1));
+  const cols = picked.length > 1 ? [group, ...picked] : picked;
+  const order = [...cats].sort((a, b) => ((value(b.code, cols[0]) || {}).share ?? -1) - ((value(a.code, cols[0]) || {}).share ?? -1));
   const cap = d3.max(rows, (r) => r.share) || 1;
   const pal = MX.palette(el);
   const W = Math.max(260, el.clientWidth);
-  const svg = MX.svg(el, W, 10, 'Heat map of each category’s share of AI-active firms by country');
+  const svg = MX.svg(el, W, 10, MX.t('ariaMixHeat'));
   svg.selectAll('*').remove();
   const labelW = Math.min(MX.textWidth(svg, order.map((c) => c.short), 'mx-rowlabel mx-strong'), Math.floor(W * 0.4));
   const gridW = W - labelW - 14;
-  const colW = gridW / cols.length;
-  const full = cols.map((c) => (c === MX.ALL ? 'All four' : c));
-  const heads = MX.textWidth(svg, full, 'mx-tick mx-strong') <= colW - 8 ? full : cols.map((c) => SHORT_COUNTRY[c]);
+  const colW = Math.min(gridW / cols.length, 150);
+  const isGroupCol = (c) => c === group && picked.length > 1;
+  const full = cols.map((c) => (isGroupCol(c) ? MX.groupName(true) : MX.cname(c)));
+  const brief = cols.map((c) => (isGroupCol(c) ? MX.t(MX.isAll() ? 'allAbbr' : 'selAbbr') : MX.CODE[c]));
+  const heads = MX.textWidth(svg, full, 'mx-tick mx-strong') <= colW - 8 ? full : brief;
   const rowH = 28;
   const top = 24;
   const H = top + order.length * rowH + 2;
@@ -136,7 +138,7 @@ dash.draw('mix-heat', (el) => {
   const g = svg.append('g').attr('transform', `translate(${labelW + 14},${top})`);
   cols.forEach((c, j) => {
     g.append('text')
-      .attr('class', c === country ? 'mx-tick mx-strong' : 'mx-tick')
+      .attr('class', j === 0 ? 'mx-tick mx-strong' : 'mx-tick')
       .attr('x', j * colW + colW / 2)
       .attr('y', -9)
       .attr('text-anchor', 'middle')
@@ -185,10 +187,10 @@ dash.draw('mix-heat', (el) => {
           const [px, py] = MX.rel(event, el);
           tip.show(
             {
-              title: cat.label,
+              title: cat.label + ' · ' + MX.cname(c),
               rows: [
-                {name: 'of AI-active firms in ' + (c === MX.ALL ? 'all four countries' : c), value: r ? MX.fmtPct(r.share) : 'withheld', strong: true},
-                ...(r ? [{name: 'AI-active firms', value: MX.fmtInt(r.n_ai)}] : []),
+                {name: MX.t('ofAiFirmsYear', sel), value: r ? MX.fmtPct(r.share) : MX.t('withheld'), strong: true},
+                ...(r ? [{name: MX.t('aiFirms'), value: MX.fmtInt(r.n_ai)}] : []),
               ],
             },
             px,
@@ -208,49 +210,62 @@ dash.draw('mix-heat', (el) => {
           .text(MX.fmtPct(r.share));
       }
     });
-    if (cat.code === focus) row.append('rect').attr('class', 'mx-focusbox').attr('x', 0.75).attr('y', 0.75).attr('width', gridW - 1.5).attr('height', rowH - 1.5).attr('rx', 4);
+    if (cat.code === focus) {
+      row.append('rect').attr('class', 'mx-focusbox').attr('x', 0.75).attr('y', 0.75).attr('width', colW * cols.length - 1.5).attr('height', rowH - 1.5).attr('rx', 4);
+    }
   });
 });
 
-// The highlighted category across industries, with all industries as a dashed line.
+// The highlighted category across industries, with all industries as a dashed line. One country and all four
+// use the tables' rows (all four: Pooled); two or three countries use the industry_mix calculation.
 dash.draw('mix-industry', (el) => {
   const kind = MX.param('bd');
-  const st = MX.get(kind === 'type' ? 'industry_types' : 'industry_roles', 'names', 'mix_by_country');
+  const picked = MX.selected();
+  const isGroup = picked.length > 1 && !MX.isAll();
+  const ids = [kind === 'type' ? 'industry_types' : 'industry_roles', 'names', 'mix_by_country'];
+  if (isGroup) ids.push('industry_mix');
+  const st = MX.get(...ids);
   if (!MX.chartState(el, st)) return;
-  const [rows, names, mix] = st.data;
-  const {cats, focus, country} = context(mix);
-  const codeCol = kind === 'type' ? 'ai_type' : 'ai_role';
-  const shareCol = kind === 'type' ? 'type_share_among_ai_firms' : 'role_share_among_ai_firms';
-  const source = country === MX.ALL ? 'Pooled' : country;
-  const mine = rows.filter((r) => r.country === source && Number(r[codeCol]) === focus);
+  const [rows, names, mix, pooled] = st.data;
+  const {cats, focus, group} = context(mix);
+  let mine;
+  if (isGroup) {
+    mine = pooled
+      .filter((r) => r.kind === kind && r.group === group && r.category === focus)
+      .map((r) => ({code: r.section, year: r.year, v: r.share, n: r.n_ai}));
+  } else {
+    const codeCol = kind === 'type' ? 'ai_type' : 'ai_role';
+    const shareCol = kind === 'type' ? 'type_share_among_ai_firms' : 'role_share_among_ai_firms';
+    const source = group === MX.ALL ? 'Pooled' : group;
+    mine = rows
+      .filter((r) => r.country === source && Number(r[codeCol]) === focus)
+      .map((r) => ({code: String(r.code), year: Number(r.year), v: r[shareCol] == null ? null : Number(r[shareCol]), n: Number(r.n_ai_firms)}));
+  }
   const years = MX.yearsOf(mine);
   const sel = MX.selYear(years);
   const named = new Map(names.filter((n) => n.scheme === 'nace' && n.level === 1).map((n) => [n.code, n]));
   const items = mine
     .filter((r) => r.year === sel)
-    .map((r) => ({
-      key: r.code,
-      label: (named.get(r.code) || {}).short || r.code,
-      name: (named.get(r.code) || {}).name || r.code,
-      v: r[shareCol] == null ? null : Number(r[shareCol]),
-      n: r.n_ai_firms,
-    }))
+    .map((r) => {
+      const n = named.get(r.code);
+      return {key: r.code, label: n ? MX.L(n, 'short') : r.code, name: n ? MX.L(n, 'name') : r.code, v: r.v, n: r.n};
+    })
     .sort((a, b) => (b.v ?? -1) - (a.v ?? -1) || a.key.localeCompare(b.key));
-  const ref = mix.find((r) => r.kind === kind && r.code === focus && r.country === country && r.year === sel);
+  const ref = mix.find((r) => r.kind === kind && r.code === focus && r.country === group && r.year === sel);
   const cat = cats.find((c) => c.code === focus);
   MX.bars(el, {
     items,
-    max: Math.max(d3.max(mine, (r) => r[shareCol]) || 0, ref && ref.share != null ? ref.share : 0) || 0.01,
+    max: Math.max(d3.max(mine, (r) => r.v) || 0, ref && ref.share != null ? ref.share : 0) || 0.01,
     ref: ref && ref.share != null ? ref.share : null,
-    refLabel: 'All industries',
+    refLabel: MX.t('allIndustries'),
     color: MX.accent(),
-    label: 'Bar chart of the highlighted category’s share of AI-active firms in each industry',
-    naText: 'fewer than ' + MX.fmtInt(MX.MIN_FIRMS) + ' AI-active firms',
+    label: MX.t('ariaBars'),
+    naText: MX.t('fewerAiFirms', MX.fmtInt(MX.MIN_FIRMS)),
     tip: (d) => ({
       title: d.name + ' (' + d.key + ')',
       rows: [
-        {color: MX.accent(), shape: 'box', name: (cat ? cat.short : '') + ', ' + sel, value: d.v == null ? 'withheld' : MX.fmtPct(d.v), strong: true},
-        {name: 'AI-active firms', value: MX.fmtInt(d.n)},
+        {color: MX.accent(), shape: 'box', name: (cat ? cat.short : '') + ', ' + sel, value: d.v == null ? MX.t('withheld') : MX.fmtPct(d.v), strong: true},
+        {name: MX.t('aiFirms'), value: MX.fmtInt(d.n)},
       ],
     }),
   });
