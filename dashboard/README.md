@@ -1,8 +1,11 @@
-# MAP-AI dashboard
+# MAP-AI Explorer
 
 **Open it: <https://map-ai-data.github.io/data/dashboard/>**
 
-An interactive dashboard of the tables in this repository: firm-level AI adoption
+The MAP-AI Explorer is an interactive dashboard of the tables in this repository,
+based on Garbers and Gregory (2026), [“The Diffusion of Artificial Intelligence
+Across Firms: Evidence from Europe”](https://docs.iza.org/dp18434.pdf), IZA
+Discussion Paper No. 18434. It shows firm-level AI adoption
 by country, region and industry, and the ecosystem roles and technology types of
 AI-active firms, for Belgium, France, Germany and Luxembourg, 2016–2024.
 
