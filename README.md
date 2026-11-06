@@ -7,8 +7,9 @@ and described in:
 
 > [Garbers, Julio and Terry Gregory. "The Diffusion of Artificial Intelligence Across Firms: Evidence from Europe." IZA Discussion Paper, No. 18434 (2026).](https://docs.iza.org/dp18434.pdf)
 
-**[▶ Explore the data in the interactive dashboard](https://map-ai-data.github.io/data/dashboard/)**: AI
-adoption by country, region and industry, with a map of every region, 2016–2024.
+**[▶ Open the MAP-AI Explorer](https://map-ai-data.github.io/data/dashboard/)**, the
+interactive dashboard of these data: AI adoption by country, region and industry,
+with a map of every region, 2016–2024.
 
 MAP-AI uses a Large Language Model to read firm website content and identify
 whether a firm **adopts AI** (uses, develops, or deploys AI technologies), what
@@ -17,10 +18,10 @@ works with. The indicator captures *realized* AI adoption rather than potential
 AI exposure. See the paper for the full classification methodology and
 validation.
 
-## Interactive dashboard
+## MAP-AI Explorer
 
-**<https://map-ai-data.github.io/data/dashboard/>** shows these tables
-interactively: AI adoption by country, region (with a map) and industry, and the
+The **[MAP-AI Explorer](https://map-ai-data.github.io/data/dashboard/)** shows these
+tables interactively: AI adoption by country, region (with a map) and industry, and the
 ecosystem roles and technology types of AI-active firms, year by year. Its source
 is in [`dashboard/`](dashboard/); [`dashboard/README.md`](dashboard/README.md)
 explains how it is built from the tables and how to run it locally.
