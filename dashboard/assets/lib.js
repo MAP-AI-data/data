@@ -51,6 +51,15 @@ const STR = {
   ariaMixTrend: ['Line chart of the share of AI-active firms in each category, by year', 'Liniendiagramm: Anteil der KI-aktiven Unternehmen je Kategorie und Jahr', 'Graphique linéaire : part des entreprises actives en IA par catégorie et par année'],
   ariaMixDumbbell: ['Dot plot of each category’s share of AI-active firms in the first and the selected year', 'Punktdiagramm: Anteil je Kategorie im ersten und im gewählten Jahr', 'Diagramme à points : part de chaque catégorie la première année et l’année choisie'],
   ariaMixHeat: ['Heat map of each category’s share of AI-active firms by country', 'Heatmap: Anteil je Kategorie nach Land', 'Carte de chaleur : part de chaque catégorie par pays'],
+  survey: ['Eurostat survey', 'Eurostat-Erhebung', 'Enquête Eurostat'],
+  surveyShort: ['survey', 'Erhebung', 'enquête'],
+  valX: ['Eurostat survey: share of firms using AI', 'Eurostat-Erhebung: Anteil der Unternehmen mit KI', 'Enquête Eurostat : part des entreprises utilisant l’IA'],
+  valY: ['MAP-AI: share of firms using AI', 'MAP-AI: Anteil der Unternehmen mit KI', 'MAP-AI : part des entreprises utilisant l’IA'],
+  ppDiff: ['difference, pp', 'Differenz, Pp.', 'écart, pt'],
+  surveyGaps: ['survey figure missing for some countries', 'Erhebungswert fehlt für einige Länder', 'chiffre d’enquête manquant pour certains pays'],
+  seriesBreak: ['break in Eurostat’s series', 'Bruch in der Eurostat-Reihe', 'rupture dans la série d’Eurostat'],
+  ariaValScatter: ['Scatter plot of each industry’s share of firms using AI, Eurostat’s survey against MAP-AI', 'Streudiagramm: Anteil der Unternehmen mit KI je Branche, Eurostat-Erhebung gegen MAP-AI', 'Nuage de points : part des entreprises utilisant l’IA par secteur, enquête Eurostat contre MAP-AI'],
+  ariaValLevels: ['Line chart of MAP-AI’s share of firms using AI by year, with Eurostat’s survey shares as rings', 'Liniendiagramm: MAP-Anteil der Unternehmen mit KI je Jahr, Eurostat-Erhebung als Ringe', 'Graphique linéaire : part MAP-AI des entreprises utilisant l’IA par année, enquête Eurostat en anneaux'],
   ariaBars: ['Bar chart of the highlighted category’s share of AI-active firms in each industry', 'Balkendiagramm: Anteil der hervorgehobenen Kategorie je Branche', 'Diagramme en barres : part de la catégorie mise en avant par secteur'],
 };
 MX.t = (key, ...args) => {
@@ -442,7 +451,7 @@ dash.calc('industry_mix', {
 
 // ---------------------------------------------------------------- filters
 
-const DEFAULTS = {level: '3', ind: 'nace1', bd: 'type', lang: 'en', mapmode: 'share'};
+const DEFAULTS = {level: '3', ind: 'nace1', bd: 'type', lang: 'en', mapmode: 'share', wave: 'avg'};
 MX.param = (name) => {
   const v = dash.params()[name];
   return v === null || v === undefined || v === '' ? DEFAULTS[name] : String(v);
@@ -492,7 +501,7 @@ MX.textState = (el, st) => {
 };
 MX.where = (cond) =>
   Object.entries(cond)
-    .map(([k, v]) => k + '=' + String(v).replace(/[%&=]/g, encodeURIComponent))
+    .map(([k, v]) => k + '=' + String(v).replace(/[%&=+]/g, encodeURIComponent))
     .join('&');
 MX.key = (...parts) => parts.map((p) => encodeURIComponent(String(p))).join(',');
 MX.sorter = ({key, dir}) => (a, b) => {
@@ -618,6 +627,7 @@ MX.tip = (el) => {
           const k = document.createElement('i');
           k.className = 'mx-tip-key' + (r.shape ? ' is-' + r.shape : '');
           k.style.background = r.color;
+          k.style.color = r.color;
           row.append(k);
         }
         const b = document.createElement('b');
@@ -723,7 +733,8 @@ MX.lineChart = (el, o) => {
   const svg = MX.svg(el, W, H, o.label);
   svg.selectAll('*').remove();
   const {series, years, sel} = o;
-  const top = d3.max(series, (s) => d3.max(s.values, o.value)) || 0.01;
+  const rings = o.points || [];
+  const top = Math.max(d3.max(series, (s) => d3.max(s.values, o.value)) || 0, d3.max(rings, (p) => p.value) || 0) || 0.01;
   const nY = narrow ? 4 : 5;
   const y = d3.scaleLinear([0, top * 1.04], [1, 0]).nice(nY);
   const yTicks = y.ticks(nY);
@@ -771,6 +782,16 @@ MX.lineChart = (el, o) => {
     .attr('r', 4)
     .style('fill', (p) => p.s.color);
 
+  g.append('g')
+    .selectAll('circle')
+    .data(rings)
+    .join('circle')
+    .attr('class', 'mx-ringpt')
+    .attr('cx', (p) => x(p.year))
+    .attr('cy', (p) => y(p.value))
+    .attr('r', 4.5)
+    .style('stroke', (p) => p.color);
+
   const xEnd = x(years[years.length - 1]);
   const placed = MX.spread(
     ends.map((e) => ({...e, y0: y(o.value(e.s.values[e.s.values.length - 1]))})),
@@ -805,8 +826,11 @@ MX.lineChart = (el, o) => {
       .filter((p) => p.d)
       .sort((a, b) => o.value(b.d) - o.value(a.d));
     const k = el.clientWidth / W;
+    const rows = o.tipRows
+      ? o.tipRows(yr)
+      : list.map((p) => ({color: p.s.color, name: o.tipName(p.s), value: MX.fmtPct(o.value(p.d)), strong: o.strong(p.s)}));
     tip.show(
-      {title: String(yr), rows: list.map((p) => ({color: p.s.color, name: o.tipName(p.s), value: MX.fmtPct(o.value(p.d)), strong: o.strong(p.s)}))},
+      {title: String(yr), rows},
       (m.left + x(yr)) * k,
       py ?? (m.top + ih / 3) * k,
     );
@@ -1107,13 +1131,14 @@ if (linkedPage) {
   if (linked !== linkedPage) setTimeout(() => linked.scrollIntoView({block: 'start'}), 700);
 }
 
-// Segmented filters. The language and map view leave the address clean at their defaults.
+// Segmented filters. The language, map view and survey year leave the address clean at their defaults.
+const CLEAN = ['lang', 'mapmode', 'wave'];
 for (const seg of root.querySelectorAll('.mx-seg[data-param]')) {
   seg.addEventListener('click', (event) => {
     const b = event.target.closest('button[data-value]');
     if (!b) return;
     const name = seg.dataset.param;
-    const value = (name === 'lang' || name === 'mapmode') && b.dataset.value === DEFAULTS[name] ? null : b.dataset.value;
+    const value = CLEAN.includes(name) && b.dataset.value === DEFAULTS[name] ? null : b.dataset.value;
     dash.setParams(name === 'bd' ? {bd: value, focus: null} : {[name]: value});
   });
 }
@@ -1165,7 +1190,7 @@ const play = () => {
 for (const b of root.querySelectorAll('.mx-play')) b.addEventListener('click', () => (timer ? MX.stop() : play()));
 
 dash.onData(() => {
-  const p = {level: MX.param('level'), ind: MX.param('ind'), bd: MX.param('bd'), lang: MX.lang(), mapmode: MX.param('mapmode')};
+  const p = {level: MX.param('level'), ind: MX.param('ind'), bd: MX.param('bd'), lang: MX.lang(), mapmode: MX.param('mapmode'), wave: MX.param('wave')};
   for (const seg of root.querySelectorAll('.mx-seg[data-param]')) {
     for (const b of seg.querySelectorAll('button[data-value]')) b.setAttribute('aria-pressed', String(b.dataset.value === p[seg.dataset.param]));
   }
@@ -1205,7 +1230,7 @@ const redraw = (names) => {
 };
 if (document.fonts && document.fonts.ready) {
   document.fonts.ready.then(() =>
-    setTimeout(() => redraw(['trend', 'counts', 'swarm', 'dumbbell-ind', 'mix-trend', 'mix-dumbbell', 'mix-heat', 'mix-industry']), 60),
+    setTimeout(() => redraw(['trend', 'counts', 'swarm', 'dumbbell-ind', 'mix-trend', 'mix-dumbbell', 'mix-heat', 'mix-industry', 'val-scatter', 'val-levels']), 60),
   );
 }
 const recolor = () => redraw(['industry-table', 'ind-scale', 'mix-heat', 'map', 'map-scale', 'map-top', 'map-bottom']);
