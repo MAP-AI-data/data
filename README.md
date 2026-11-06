@@ -9,7 +9,7 @@ and described in:
 
 **[▶ Open the MAP-AI Explorer](https://map-ai-data.github.io/data/dashboard/)**, the
 interactive dashboard of these data: AI adoption by country, region and industry,
-with a map of every region, 2016–2024.
+with a map and a heat map of every region, 2016–2024, in English, German or French.
 
 MAP-AI uses a Large Language Model to read firm website content and identify
 whether a firm **adopts AI** (uses, develops, or deploys AI technologies), what
@@ -21,9 +21,10 @@ validation.
 ## MAP-AI Explorer
 
 The **[MAP-AI Explorer](https://map-ai-data.github.io/data/dashboard/)** shows these
-tables interactively: AI adoption by country, region (with a map) and industry, and the
-ecosystem roles and technology types of AI-active firms, year by year. Its source
-is in [`dashboard/`](dashboard/); [`dashboard/README.md`](dashboard/README.md)
+tables interactively: AI adoption by country, region (with a map and a heat map) and
+industry, and the ecosystem roles and technology types of AI-active firms, year by
+year, for all four countries or only the ones you pick, in English, German or French.
+Its source is in [`dashboard/`](dashboard/); [`dashboard/README.md`](dashboard/README.md)
 explains how it is built from the tables and how to run it locally.
 
 ## What is in this repository
