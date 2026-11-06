@@ -666,6 +666,36 @@
   background: var(--cds-chart-muted);
 }
 
+.mx-key-dash {
+  width: 18px;
+  height: 0;
+  border-radius: 0;
+  background: none;
+  border-top: 2px dashed var(--color-fg);
+}
+
+.mx-key-dotted {
+  width: 18px;
+  height: 0;
+  border-radius: 0;
+  background: none;
+  border-top: 2px dotted var(--color-fg-muted);
+}
+
+.mx-key-ring {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--color-fg);
+}
+
+.mx-legends {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 28px;
+}
+
 /* Charts */
 .mx-chart {
   position: relative;
@@ -701,6 +731,10 @@
 
 .mx-h-bars {
   min-height: 500px;
+}
+
+.mx-h-val {
+  min-height: 300px;
 }
 
 .mx-chart text {
@@ -882,6 +916,68 @@
 .mx-cell {
   stroke: var(--color-panel);
   stroke-width: 2;
+}
+
+.mx-diag {
+  stroke: var(--cds-chart-reference);
+  stroke-width: 1.5;
+  stroke-dasharray: 1 5;
+  stroke-linecap: round;
+}
+
+.mx-fitline {
+  stroke: var(--color-fg);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 4;
+}
+
+.mx-vdot {
+  stroke: var(--color-panel);
+  stroke-width: 1.5;
+}
+
+.mx-chart .mx-vlabel {
+  fill: var(--color-fg);
+  font-weight: var(--cds-font-weight-medium);
+}
+
+.mx-ringpt {
+  fill: var(--color-panel);
+  stroke-width: 2.25;
+}
+
+.mx-val-stats {
+  margin: 0;
+  font-size: var(--cds-font-size-body);
+  line-height: 1.5;
+  color: var(--color-fg-muted);
+}
+
+.mx .mx-val-stats b {
+  color: var(--color-fg);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.mx-val-split {
+  display: grid;
+  gap: var(--cds-gap-lg);
+  align-items: start;
+}
+
+@container (min-width: 900px) {
+  .mx-val-split {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  }
+}
+
+.mx .mx-val-table .mx-name {
+  min-width: 0;
+}
+
+.mx-defs-2 {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: 16px 36px;
 }
 
 /* Map */
@@ -1162,6 +1258,14 @@
   width: 8px;
   height: 8px;
   border-radius: 2px;
+}
+
+.mx .mx-tip-key.is-ring {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: transparent !important;
+  box-shadow: inset 0 0 0 2px currentColor;
 }
 
 /* Tables */
