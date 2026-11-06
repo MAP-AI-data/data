@@ -2,8 +2,8 @@
 const MX = window.MX;
 
 const pick = (rows, cond) => rows.find((r) => Object.keys(cond).every((k) => String(r[k]) === String(cond[k])));
-const allFour = (year) => ({country: MX.ALL, year});
-const genAI = (year) => ({kind: 'type', code: 1, country: MX.ALL, year}); // type 1: generative AI & conversational systems
+const group = (year) => ({country: MX.groupKey(), year});
+const genAI = (year) => ({kind: 'type', code: 1, country: MX.groupKey(), year}); // type 1: generative AI & conversational systems
 
 // A figure for the selected year (or the latest), marked with the row it shows.
 const figure = (name, source, field, cond, fmt, opts = {}) => {
@@ -25,17 +25,24 @@ const figure = (name, source, field, cond, fmt, opts = {}) => {
     }
   });
 };
-figure('lede-share', 'adoption_by_country', 'share', allFour, MX.fmtPct, {latest: true});
-figure('lede-firms', 'adoption_by_country', 'n_firms', allFour, MX.fmtInt, {latest: true});
-figure('lede-multiple', 'adoption_by_country', 'multiple', allFour, MX.fmtMult, {latest: true});
-figure('kpi-share', 'adoption_by_country', 'share', allFour, MX.fmtPct);
-figure('kpi-share-delta', 'adoption_by_country', 'change_pp', allFour, MX.fmtPP, {signed: true});
-figure('kpi-ai', 'adoption_by_country', 'n_ai', allFour, MX.fmtInt);
-figure('kpi-ai-delta', 'adoption_by_country', 'n_ai_change', allFour, MX.fmtSignedInt, {signed: true});
-figure('kpi-firms', 'adoption_by_country', 'n_firms', allFour, MX.fmtInt);
-figure('kpi-firms-delta', 'adoption_by_country', 'n_firms_change', allFour, MX.fmtRel, {signed: true});
+figure('lede-share', 'adoption_by_country', 'share', group, MX.fmtPct, {latest: true});
+figure('lede-firms', 'adoption_by_country', 'n_firms', group, MX.fmtInt, {latest: true});
+figure('lede-multiple', 'adoption_by_country', 'multiple', group, MX.fmtMult, {latest: true});
+figure('kpi-share', 'adoption_by_country', 'share', group, MX.fmtPct);
+figure('kpi-share-delta', 'adoption_by_country', 'change_pp', group, MX.fmtPP, {signed: true});
+figure('kpi-ai', 'adoption_by_country', 'n_ai', group, MX.fmtInt);
+figure('kpi-ai-delta', 'adoption_by_country', 'n_ai_change', group, MX.fmtSignedInt, {signed: true});
+figure('kpi-firms', 'adoption_by_country', 'n_firms', group, MX.fmtInt);
+figure('kpi-firms-delta', 'adoption_by_country', 'n_firms_change', group, MX.fmtRel, {signed: true});
 figure('kpi-genai', 'mix_by_country', 'share', genAI, MX.fmtPct);
 figure('kpi-genai-delta', 'mix_by_country', 'change_pp', genAI, MX.fmtPP, {signed: true});
+
+// The picked countries as words in the headline sentence: French takes "en"/"au" before each.
+const FR_IN = {Belgium: 'en Belgique', France: 'en France', Germany: 'en Allemagne', Luxembourg: 'au Luxembourg'};
+dash.draw('lede-countries', (el) => {
+  const sel = MX.selected();
+  el.textContent = MX.loc().list.format(sel.map((c) => (MX.lang() === 'fr' ? FR_IN[c] : MX.cname(c))));
+});
 
 // Sparklines under the headline figures.
 const spark = (name, source, keep, field, zero) => {
@@ -63,35 +70,60 @@ const spark = (name, source, keep, field, zero) => {
     if (s) svg.append('circle').attr('class', 'mx-spark-dot').attr('cx', x(sel)).attr('cy', y(s[field])).attr('r', 3.5);
   });
 };
-const isAll = (r) => r.country === MX.ALL;
-spark('spark-share', 'adoption_by_country', isAll, 'share', true);
-spark('spark-ai', 'adoption_by_country', isAll, 'n_ai', true);
-spark('spark-firms', 'adoption_by_country', isAll, 'n_firms', false);
-spark('spark-genai', 'mix_by_country', (r) => r.kind === 'type' && r.code === 1 && r.country === MX.ALL, 'share', true);
+const inGroup = (r) => r.country === MX.groupKey();
+spark('spark-share', 'adoption_by_country', inGroup, 'share', true);
+spark('spark-ai', 'adoption_by_country', inGroup, 'n_ai', true);
+spark('spark-firms', 'adoption_by_country', inGroup, 'n_firms', false);
+spark('spark-genai', 'mix_by_country', (r) => r.kind === 'type' && r.code === 1 && inGroup(r), 'share', true);
 
-// How AI spread: one line per country plus all four together.
+// Legends that follow the picked countries.
+const legend = (name, pooled, shape) => {
+  dash.draw(name, (el) => {
+    const sel = MX.selected();
+    const items = sel.map((c) => ({color: MX.colorOf(c), text: MX.cname(c)}));
+    if (pooled && sel.length > 1) items.unshift({color: 'var(--color-fg)', text: MX.groupName()});
+    el.replaceChildren(
+      ...items.map((it) => {
+        const li = document.createElement('li');
+        const key = document.createElement('i');
+        key.className = 'mx-key' + (shape ? ' ' + shape : '');
+        key.style.background = it.color;
+        li.append(key, document.createTextNode(it.text));
+        return li;
+      }),
+    );
+  });
+};
+legend('legend-trend', true, 'mx-key-line');
+legend('legend-counts', false, '');
+
+// How AI spread: one line per picked country, plus the picked countries together.
 dash.draw('trend', (el) => {
   const st = MX.get('adoption_by_country');
   if (!MX.chartState(el, st)) return;
   const rows = st.data[0];
   const years = MX.yearsOf(rows);
-  const series = [...MX.COUNTRIES, MX.ALL]
+  const sel = MX.selected();
+  const keys = sel.length > 1 ? [...sel, MX.groupKey()] : sel;
+  const series = keys
     .map((key) => ({
       key,
-      color: MX.colorOf(key),
+      pooled: !MX.COUNTRIES.includes(key),
+      color: MX.COUNTRIES.includes(key) ? MX.colorOf(key) : 'var(--color-fg)',
       values: rows.filter((r) => r.country === key && r.share != null).sort((a, b) => a.year - b.year),
     }))
     .filter((s) => s.values.length);
+  const nameOf = (s, short) => (s.pooled ? MX.groupName(short) : MX.cname(s.key));
   MX.lineChart(el, {
     series,
     years,
     sel: MX.selYear(years),
-    label: 'Line chart of the share of classified firms that are AI-active, by country and year',
+    label: MX.t('ariaTrend'),
     value: (d) => d.share,
-    endLabel: (s, narrow) => (narrow ? '' : (s.key === MX.ALL ? 'All four' : s.key) + '  ') + MX.fmtPct(s.values[s.values.length - 1].share),
-    widthOf: (s) => (s.key === MX.ALL ? 2.75 : 2),
-    tipName: (s) => s.key,
-    strong: (s) => s.key === MX.ALL,
+    endLabel: (s, narrow) => (narrow ? '' : nameOf(s, true) + '  ') + MX.fmtPct(s.values[s.values.length - 1].share),
+    widthOf: (s) => (s.pooled ? 2.75 : 2),
+    tipName: (s) => nameOf(s),
+    strong: (s) => s.pooled,
     dot: () => true,
   });
 });
@@ -100,21 +132,22 @@ dash.draw('trend', (el) => {
 dash.draw('counts', (el) => {
   const st = MX.get('adoption_by_country');
   if (!MX.chartState(el, st)) return;
-  const rows = st.data[0].filter((r) => MX.COUNTRIES.includes(r.country));
+  const sel = MX.selected();
+  const rows = st.data[0].filter((r) => sel.includes(r.country));
   const years = MX.yearsOf(rows);
-  const sel = MX.selYear(years);
-  const byYear = years.map((year) => {
-    const o = {year};
-    for (const c of MX.COUNTRIES) {
-      const r = rows.find((q) => q.country === c && q.year === year);
+  const year = MX.selYear(years);
+  const byYear = years.map((y) => {
+    const o = {year: y};
+    for (const c of sel) {
+      const r = rows.find((q) => q.country === c && q.year === y);
       o[c] = r ? r.n_ai : 0;
     }
-    o.total = d3.sum(MX.COUNTRIES, (c) => o[c]);
+    o.total = d3.sum(sel, (c) => o[c]);
     return o;
   });
   const W = Math.max(260, el.clientWidth);
   const H = W < 480 ? 260 : 300;
-  const svg = MX.svg(el, W, H, 'Stacked bar chart of AI-active firms by country and year');
+  const svg = MX.svg(el, W, H, MX.t('ariaCounts'));
   svg.selectAll('*').remove();
   const y = d3.scaleLinear([0, (d3.max(byYear, (d) => d.total) || 1) * 1.1], [1, 0]).nice(4);
   const ticks = y.ticks(4);
@@ -137,14 +170,14 @@ dash.draw('counts', (el) => {
   years.forEach((yr, i) => {
     if (i % every) return;
     g.append('text')
-      .attr('class', yr === sel ? 'mx-tick mx-strong' : 'mx-tick')
+      .attr('class', yr === year ? 'mx-tick mx-strong' : 'mx-tick')
       .attr('x', x(yr) + x.bandwidth() / 2)
       .attr('y', ih + 20)
       .attr('text-anchor', 'middle')
       .text(yr);
   });
   const segs = [];
-  d3.stack().keys(MX.COUNTRIES)(byYear).forEach((layer, li) => {
+  d3.stack().keys(sel)(byYear).forEach((layer, li) => {
     for (const d of layer) if (d[1] > d[0]) segs.push({country: layer.key, li, year: d.data.year, y0: d[0], y1: d[1]});
   });
   const topLayer = {};
@@ -164,12 +197,12 @@ dash.draw('counts', (el) => {
       return s.li === topLayer[s.year] ? MX.roundTop(left(s.year), top, bw, h, 3) : `M${left(s.year)},${top}h${bw}v${h}h${-bw}Z`;
     })
     .style('fill', (s) => MX.colorOf(s.country))
-    .style('opacity', (s) => (s.year === sel ? 1 : 0.5));
-  const selTotal = byYear.find((d) => d.year === sel);
+    .style('opacity', (s) => (s.year === year ? 1 : 0.5));
+  const selTotal = byYear.find((d) => d.year === year);
   if (selTotal) {
     g.append('text')
       .attr('class', 'mx-strong')
-      .attr('x', left(sel) + bw / 2)
+      .attr('x', left(year) + bw / 2)
       .attr('y', y(selTotal.total) - 7)
       .attr('text-anchor', 'middle')
       .text(MX.fmtCompact(selTotal.total));
@@ -187,17 +220,9 @@ dash.draw('counts', (el) => {
     .attr('height', ih)
     .on('pointermove', (event, d) => {
       const [px, py] = MX.rel(event, el);
-      tip.show(
-        {
-          title: String(d.year),
-          rows: [
-            ...[...MX.COUNTRIES].reverse().map((c) => ({color: MX.colorOf(c), shape: 'box', name: c, value: MX.fmtInt(d[c])})),
-            {name: 'all four countries', value: MX.fmtInt(d.total), strong: true},
-          ],
-        },
-        px,
-        py,
-      );
+      const rowsTip = [...sel].reverse().map((c) => ({color: MX.colorOf(c), shape: 'box', name: MX.cname(c), value: MX.fmtInt(d[c])}));
+      if (sel.length > 1) rowsTip.push({name: MX.t('total'), value: MX.fmtInt(d.total), strong: true});
+      tip.show({title: String(d.year), rows: rowsTip}, px, py);
     })
     .on('pointerleave', () => tip.hide())
     .on('click', (event, d) => {
@@ -206,7 +231,7 @@ dash.draw('counts', (el) => {
     });
 });
 
-// Country table for the selected year.
+// Country table for the selected year: the picked countries, then the picked countries together.
 dash.draw('country-table', (el) => {
   const st = MX.get('adoption_by_country');
   if (st.status !== 'ok') {
@@ -214,17 +239,21 @@ dash.draw('country-table', (el) => {
     return;
   }
   const rows = st.data[0];
-  const sel = MX.selYear(MX.yearsOf(rows));
-  const list = [...MX.COUNTRIES, MX.ALL].map((c) => rows.find((r) => r.country === c && r.year === sel)).filter(Boolean);
+  const year = MX.selYear(MX.yearsOf(rows));
+  const sel = MX.selected();
+  const keys = sel.length > 1 ? [...sel, MX.groupKey()] : sel;
+  const list = keys.map((c) => rows.find((r) => r.country === c && r.year === year)).filter(Boolean);
   const max = d3.max(list, (r) => r.share) || 1;
   el.replaceChildren(
     ...list.map((r) => {
+      const pooled = !MX.COUNTRIES.includes(r.country);
+      const color = pooled ? 'var(--color-fg)' : MX.colorOf(r.country);
       const tr = document.createElement('tr');
       tr.dataset.key = MX.key(r.country, r.year);
-      if (r.country === MX.ALL) tr.className = 'mx-total';
+      if (pooled) tr.className = 'mx-total';
       tr.append(
-        MX.cell(r.country, '', MX.colorOf(r.country)),
-        MX.barCell(r.share, max, MX.colorOf(r.country)),
+        MX.cell(pooled ? MX.groupName() : MX.cname(r.country), '', color),
+        MX.barCell(r.share, max, color),
         MX.cell(r.change_pp == null ? '' : MX.fmtPP(r.change_pp), 'num'),
         MX.cell(MX.fmtInt(r.n_ai), 'num mx-hide-narrow'),
         MX.cell(MX.fmtInt(r.n_firms), 'num mx-hide-narrow'),
