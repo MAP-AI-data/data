@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MAP-AI · AI adoption in European firms</title>
-<meta name="description" content="Interactive dashboard of firm-level AI adoption, AI ecosystem roles and AI technology types in Belgium, France, Germany and Luxembourg, 2016–2024, from the MAP-AI data.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232a78d6'/%3E%3Ccircle cx='9' cy='22' r='3.2' fill='white'/%3E%3Ccircle cx='16' cy='15.5' r='3.2' fill='white'/%3E%3Ccircle cx='23' cy='9' r='3.2' fill='white'/%3E%3C/svg%3E">
+<title>MAP-AI Explorer · AI adoption in European firms</title>
+<meta name="description" content="MAP-AI Explorer: interactive dashboard of firm-level AI adoption, AI ecosystem roles and AI technology types in Belgium, France, Germany and Luxembourg, 2016–2024, from the MAP-AI data.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232a78d6'/%3E%3Ccircle cx='9' cy='22.5' r='2.6' fill='white' fill-opacity='.7'/%3E%3Ccircle cx='16' cy='16' r='3.2' fill='white' fill-opacity='.85'/%3E%3Ccircle cx='23.5' cy='9' r='3.9' fill='white'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/theme.css">
 <link rel="stylesheet" href="assets/style.css">
 <script src="assets/vendor/d3.min.js"></script>
@@ -15,8 +15,12 @@
 <div id="dash-root">
 <div class="mx" id="mapai">
   <header class="mx-head" id="top">
-    <p class="mx-eyebrow">MAP-AI · Mapping Artificial Intelligence in Firms</p>
-    <h1 class="mx-title">AI adoption in European firms</h1>
+    <p class="mx-eyebrow">Mapping Artificial Intelligence in Firms</p>
+    <h1 class="mx-title"><img class="mx-logo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232a78d6'/%3E%3Ccircle cx='9' cy='22.5' r='2.6' fill='white' fill-opacity='.7'/%3E%3Ccircle cx='16' cy='16' r='3.2' fill='white' fill-opacity='.85'/%3E%3Ccircle cx='23.5' cy='9' r='3.9' fill='white'/%3E%3C/svg%3E" alt="">MAP-AI <span class="mx-title-soft">Explorer</span></h1>
+    <div class="mx-paper">
+      <p class="mx-paper-label">Based on the paper</p>
+      <p class="mx-paper-ref">Garbers, Julio and Terry Gregory (2026). <a href="https://docs.iza.org/dp18434.pdf" target="_blank" rel="noopener"><cite>The Diffusion of Artificial Intelligence Across Firms: Evidence from Europe</cite></a>. <span class="mx-nowrap">IZA Discussion Paper No. 18434.</span></p>
+    </div>
     <p class="mx-lede">In <b data-draw="last-year" data-source="country_adoption">—</b>, <b data-draw="lede-share" data-source="adoption_by_country" data-field="share" data-fetchpriority="high">—</b> of the <b data-draw="lede-firms" data-source="adoption_by_country" data-field="n_firms">—</b> classified firms in Belgium, France, Germany and Luxembourg were AI-active: <b data-draw="lede-multiple" data-source="adoption_by_country" data-field="multiple">—</b> times the share in <b data-draw="first-year" data-source="country_adoption">—</b>.</p>
   </header>
 
