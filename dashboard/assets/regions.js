@@ -559,8 +559,9 @@ for (const table of root.querySelectorAll('table[data-sortable="region"]')) {
     const key = b.dataset.sort;
     regionSort.dir = regionSort.key === key ? -regionSort.dir : ['nuts_code', 'label', 'country'].includes(key) ? 1 : -1;
     regionSort.key = key;
-    for (const th of table.querySelectorAll('th[data-field]')) {
-      th.setAttribute('aria-sort', th.dataset.field === key ? (regionSort.dir > 0 ? 'ascending' : 'descending') : 'none');
+    for (const th of table.querySelectorAll('th')) {
+      const b = th.querySelector('button[data-sort]');
+      if (b) th.setAttribute('aria-sort', b.dataset.sort === key ? (regionSort.dir > 0 ? 'ascending' : 'descending') : 'none');
     }
     dash.draw('region-table');
   });
