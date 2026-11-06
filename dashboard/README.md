@@ -7,14 +7,16 @@ based on Garbers and Gregory (2026), [“The Diffusion of Artificial Intelligenc
 Across Firms: Evidence from Europe”](https://docs.iza.org/dp18434.pdf), IZA
 Discussion Paper No. 18434. It shows firm-level AI adoption
 by country, region and industry, and the ecosystem roles and technology types of
-AI-active firms, for Belgium, France, Germany and Luxembourg, 2016–2024.
+AI-active firms, for Belgium, France, Germany and Luxembourg, 2016–2024. It reads
+in English, German or French.
 
 It has five views:
 
 - **Overview**: headline figures, how AI spread in each country, AI-active firms
   by country, and a country table.
-- **Regions**: a map of every NUTS 1, 2 or 3 region, the same regions as dots by
-  country, and a table to sort and search.
+- **Regions**: a map of every NUTS 1, 2 or 3 region, which switches to a heat map
+  of where AI-active firms concentrate, the same regions as dots by country, and a
+  table to sort and search.
 - **Industries**: each industry's AI-active share in the first and the selected
   year, and a heat table of industries by country (NACE sections or divisions,
   NAICS sectors).
@@ -22,8 +24,10 @@ It has five views:
   by industry, with any category highlighted.
 - **About the data**: definitions, coverage and how to cite.
 
-A year picker and a **Play** button move every view through the years. Filters
-are kept in the address, so any view can be shared as a link.
+A year picker and a **Play** button move every view through the years. Next to
+them, country buttons narrow every view to one, two or three of the countries, and
+a switch in the header changes the language. Filters are kept in the address, so
+any view can be shared as a link.
 
 ## Running it
 
@@ -78,16 +82,18 @@ python3 dashboard/build_data.py
 
 `names.json` holds the names of NACE Rev. 2 sections and divisions, NAICS 2022
 sectors and NUTS 2024 regions, plus short labels for the AI roles and technology
-types. NUTS 3 names come from Eurostat's NUTS 2024 files; the NUTS 1 and 2 names
+types, in English and, where they differ, German and French. NUTS 3 names come from Eurostat's NUTS 2024 files; the NUTS 1 and 2 names
 were written out and checked against them. The industry names were written out
-from the published classifications rather than downloaded, so check them against
-Eurostat and the US Census Bureau before citing them.
+from the published classifications rather than downloaded, and the German and
+French names were translated for this dashboard, so check them against Eurostat
+and the US Census Bureau before citing them.
 
 ## The map
 
 `nuts_geo.json` holds the outlines of the NUTS 2024 regions of the four countries
 (levels 0–3) and of the neighbouring countries, as SVG paths in kilometres in the
-European equal-area projection (ETRS89-LAEA, EPSG:3035). It is built from
+European equal-area projection (ETRS89-LAEA, EPSG:3035), plus each region's
+representative point and area, which the heat map uses. It is built from
 Eurostat's [Nuts2json](https://github.com/eurostat/Nuts2json) at 1:10 million:
 
 ```sh
@@ -105,15 +111,23 @@ repository's CC BY 4.0 license.
 
 ## Calculations on the page
 
-- **All four countries** (country-level adoption, roles and types): AI-active
-  firms, or a category's firms, summed over the four countries and divided by
+- **Several countries together** (country-level adoption, roles and types): AI-active
+  firms, or a category's firms, summed over the picked countries and divided by
   the summed denominator. A category's firm count is recovered as
   `share_among_all_firms × n_firms`, as the main README describes. For
-  industries, the dashboard uses the tables' own `Pooled` rows.
+  industries, all four countries use the tables' own `Pooled` rows; two or three
+  countries weight each country's share by its classified firms, leaving out
+  withheld shares, and their mix of roles and types by NACE section sums the
+  recovered category counts (withheld below 30 AI-active firms).
 - **Changes** are in percentage points, on the year before or since the first
   year; **growth** is a share divided by the same share in the first year.
 - The **map** shades each region on one scale for all years at a level, whose
   darkest color starts at the 98th percentile of all regions' shares at that
   level.
+- The **heat map** has no firm locations to work from, only regions. It estimates
+  each NUTS 3 region's AI-active firms as `ai_adoption_share × n_firms`, spreads
+  them around the region's representative point with a Gaussian (σ = 0.25 × √area,
+  between 7 and 22 km), sums them on a 4 km grid as firms per km², and colors the
+  result on a cube-root scale fixed at the latest year's peak.
 - Shares the tables withhold (fewer than 30 firms in the denominator) show as
   hatched cells or missing dots.
