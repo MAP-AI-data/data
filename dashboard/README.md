@@ -22,7 +22,7 @@ It has five views:
   NAICS sectors).
 - **Technologies & roles**: the mix of AI-active firms over time, by country and
   by industry, with any category highlighted.
-- **Validation**: MAP-AI against Eurostat's survey of AI use in enterprises, as in
+- **MAP-AI x Eurostat**: MAP-AI against Eurostat's survey of AI use in enterprises, as in
   Figure A.2 of the paper: each industry's share of firms using AI in both, for any
   survey year or their average, with the correlation, a table of the industries,
   and both measures over time.
@@ -149,7 +149,7 @@ repository's CC BY 4.0 license.
   result on a cube-root scale fixed at the latest year's peak.
 - Shares the tables withhold (fewer than 30 firms in the denominator) show as
   hatched cells or missing dots.
-- **Validation** follows the paper's Figure A.2. For each NACE section the survey
+- **MAP-AI x Eurostat** follows the paper's Figure A.2. For each NACE section the survey
   reports (C to N without K), the survey's share for several countries is the
   mean of the shares the countries report, as in the paper, and MAP-AI's pools
   their firms (all four countries: the `Pooled` rows); the average of the survey
