@@ -76,9 +76,7 @@
           <button class="mx-tab" type="button" role="tab" data-tab="tech" aria-selected="false"><span
               data-l="en">Technologies &amp; roles</span><span data-l="de" lang="de" hidden>Technologien &amp;
               Rollen</span><span data-l="fr" lang="fr" hidden>Technologies et rôles</span></button>
-          <button class="mx-tab" type="button" role="tab" data-tab="MAP-AI x Eurostat" aria-selected="false"><span
-              data-l="en">Validation</span><span data-l="de" lang="de" hidden>Validierung</span><span data-l="fr"
-              lang="fr" hidden>Validation</span></button>
+          <button class="mx-tab" type="button" role="tab" data-tab="validation" aria-selected="false">MAP-AI x Eurostat</button>
           <button class="mx-tab" type="button" role="tab" data-tab="about" aria-selected="false"><span data-l="en">About
               the data</span><span data-l="de" lang="de" hidden>Über die Daten</span><span data-l="fr" lang="fr"
               hidden>À propos des données</span></button>
@@ -658,8 +656,7 @@
           <div class="mx-seg" data-param="wave" role="group" aria-label="Survey year" data-aria-en="Survey year"
             data-aria-de="Erhebungsjahr" data-aria-fr="Année d’enquête">
             <button type="button" data-value="avg" aria-pressed="true"><span data-l="en">Average</span><span data-l="de"
-                lang="de" hidden>Mittelwert, wie in der Studie</span><span data-l="fr" lang="fr" hidden>Moyenne, comme
-                dans l’étude</span></button>
+                lang="de" hidden>Mittelwert</span><span data-l="fr" lang="fr" hidden>Moyenne</span></button>
             <button type="button" data-value="2021" aria-pressed="false">2021</button>
             <button type="button" data-value="2023" aria-pressed="false">2023</button>
             <button type="button" data-value="2024" aria-pressed="false">2024</button>
@@ -671,28 +668,23 @@
                 data-l="de" lang="de" hidden>MAP-AI und die Eurostat-Erhebung, Branche für Branche</span><span
                 data-l="fr" lang="fr" hidden>MAP-AI et l’enquête d’Eurostat, secteur par secteur</span></h2>
             <p class="mx-card-note"><span data-l="en">Each dot is an industry (a NACE section): its share of firms using
-                AI in Eurostat’s survey of enterprises, across, against its share in MAP-AI, up. With all four countries
-                and the average picked. The table names the letters; its difference is
+                AI in Eurostat’s survey of enterprises, across, against its share in MAP-AI, up. The table names the letters; its difference is
                 MAP-AI minus the survey, in percentage points.</span><span data-l="de" lang="de" hidden>Jeder Punkt ist
                 eine Branche (ein NACE-Abschnitt): ihr Anteil der Unternehmen mit KI in der Unternehmenserhebung von
-                Eurostat, waagerecht, gegen ihren Anteil in MAP-AI, senkrecht. Mit allen vier Ländern und dem Mittelwert
-                ist dies Abbildung A.2 der Studie. Die Tabelle nennt die Buchstaben; ihre Differenz ist MAP-AI minus
+                Eurostat, waagerecht, gegen ihren Anteil in MAP-AI, senkrecht. Die Tabelle nennt die Buchstaben; ihre Differenz ist MAP-AI minus
                 Erhebung, in Prozentpunkten.</span><span data-l="fr" lang="fr" hidden>Chaque point est un secteur (une
                 section NACE) : sa part d’entreprises utilisant l’IA dans l’enquête d’Eurostat auprès des entreprises, à
-                l’horizontale, contre sa part dans MAP-AI, à la verticale. Avec les quatre pays et la moyenne, c’est la
-                figure A.2 de l’étude. Le tableau nomme les lettres&nbsp;; son écart est MAP-AI moins l’enquête, en
+                l’horizontale, contre sa part dans MAP-AI, à la verticale. Le tableau nomme les lettres&nbsp;; son écart est MAP-AI moins l’enquête, en
                 points de pourcentage.</span></p>
           </header>
           <p class="mx-val-stats"><span data-l="en">Correlation r = <b data-draw="val-r" data-source="validation_fit"
                 data-field="r">—</b> across <b data-draw="val-n" data-source="validation_fit" data-field="n">—</b>
               industries. </span><span data-l="de" lang="de" hidden>Korrelation r = <b data-draw="val-r"
                 data-source="validation_fit" data-field="r">—</b> über <b data-draw="val-n" data-source="validation_fit"
-                data-field="n">—</b> Branchen. In <b data-draw="val-below" data-source="validation_fit"
-                data-field="below">—</b> davon liegt MAP-AI unter der Erhebung.</span><span data-l="fr" lang="fr"
+                data-field="n">—</b> Branchen.</span><span data-l="fr" lang="fr"
               hidden>Corrélation r = <b data-draw="val-r" data-source="validation_fit" data-field="r">—</b> sur <b
                 data-draw="val-n" data-source="validation_fit" data-field="n">—</b>
-              secteurs. MAP-AI est inférieur à l’enquête dans <b data-draw="val-below" data-source="validation_fit"
-                data-field="below">—</b> d’entre eux.</span></p>
+              secteurs.</span></p>
           <ul class="mx-legend" aria-label="Key" data-aria-en="Key" data-aria-de="Legende" data-aria-fr="Légende">
             <li><i class="mx-key mx-key-dot" data-key-group></i><span data-l="en">Industries</span><span data-l="de"
                 lang="de" hidden>Branchen</span><span data-l="fr" lang="fr" hidden>Secteurs</span></li>
@@ -808,12 +800,9 @@
               <dd><span data-l="en">As in the paper, the survey’s share for several countries is the average of the
                   shares they report, and MAP-AI’s pools their firms. </span><span data-l="de" lang="de" hidden>Wie in
                   der Studie ist der Erhebungsanteil mehrerer Länder der Mittelwert ihrer
-                  gemeldeten Anteile, und MAP-AI fasst ihre Unternehmen zusammen. Die Abbildung der Studie beruht auf
-                  Daten auf Unternehmensebene; diese Werte stammen aus den veröffentlichten Tabellen, daher weichen
-                  einige leicht ab.</span><span data-l="fr" lang="fr" hidden>Comme dans l’étude, la part d’enquête de
+                  gemeldeten Anteile, und MAP-AI fasst ihre Unternehmen zusammen.</span><span data-l="fr" lang="fr" hidden>Comme dans l’étude, la part d’enquête de
                   plusieurs pays est la moyenne des parts qu’ils déclarent, et celle de MAP-AI regroupe leurs
-                  entreprises. La figure de l’étude repose sur des données au niveau des entreprises&nbsp;; ces valeurs
-                  proviennent des tableaux publiés, d’où de légers écarts.</span></dd>
+                  entreprises.</span></dd>
             </div>
             <div>
               <dt><span data-l="en">Source</span><span data-l="de" lang="de" hidden>Quelle</span><span data-l="fr"
